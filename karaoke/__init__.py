@@ -31,5 +31,7 @@ def create_app(settings: Settings) -> FastAPI:
 
     app.include_router(sessions_router, prefix="/api/sessions", tags=["sessions"])
     app.include_router(recordings_router, prefix="/api/recordings", tags=["recordings"])
+    # Saved clips are served from DATA_DIR/media at /media/<file_name>.
+    app.mount("/media", StaticFiles(directory=settings.media_dir), name="media")
     app.mount("/", StaticFiles(directory=STATIC_DIR, html=True), name="static")
     return app
