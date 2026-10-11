@@ -1,6 +1,6 @@
 # Group Karaoke
 
-Asynchronous group karaoke. A host picks a song, the song is split into segments, each participant records their segment on webcam whenever they like, and a finale plays every clip in order over the backing track.
+Asynchronous group karaoke. A host picks a song, the song is split into segments, each participant records their segment (voice only) whenever they like, and a finale plays every clip in order over the backing track.
 
 ## Architecture (summary)
 One FastAPI process with two feature domains, each split into `routes.py` (HTTP), `service.py` (business logic) and `repository.py` (SQL):

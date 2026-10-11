@@ -84,11 +84,14 @@ def test_claim_turn_checks_turn_and_participant_belong_to_session(conn, session)
 def test_only_claimed_turns_are_open_for_recording(conn, session):
     turn_id = session["turns"][0]["id"]
     ana_id = session["participants"][0]["id"]
-    assert service.is_turn_open_for_recording(conn, turn_id) is False
+    assert service.get_turn_open_for_recording(conn, turn_id) is None
 
     service.claim_turn(conn, session["id"], turn_id, ana_id)
-    assert service.is_turn_open_for_recording(conn, turn_id) is True
-    assert service.is_turn_open_for_recording(conn, 999) is False
+    assert service.get_turn_open_for_recording(conn, turn_id) == {
+        "turn_id": turn_id,
+        "session_id": session["id"],
+    }
+    assert service.get_turn_open_for_recording(conn, 999) is None
 
     with pytest.raises(service.Conflict):
         service.mark_turn_recorded(conn, session["turns"][1]["id"])  # still pending
@@ -108,6 +111,6 @@ def test_session_completes_when_last_turn_is_recorded(conn, session):
 
     service.mark_turn_recorded(conn, turn_ids[-1])
     assert service.get_session(conn, session["id"])["status"] == "complete"
-    assert service.is_turn_open_for_recording(conn, turn_ids[0]) is False
+    assert service.get_turn_open_for_recording(conn, turn_ids[0]) is None
     with pytest.raises(service.Conflict):
         service.join_session(conn, session["id"], "Late Larry")

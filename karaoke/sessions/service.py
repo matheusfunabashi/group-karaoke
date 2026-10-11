@@ -116,10 +116,13 @@ def claim_turn(conn, session_id: str, turn_id: int, participant_id: int) -> dict
     return repo.get_turn(conn, turn_id)
 
 
-def is_turn_open_for_recording(conn, turn_id: int) -> bool:
-    """The one question the recordings domain is allowed to ask (see ADR-2)."""
+def get_turn_open_for_recording(conn, turn_id: int) -> dict | None:
+    """The one question the recordings domain is allowed to ask (see ADR-2): is this turn
+    claimed and waiting for a clip? Returns only the fields recordings needs, or None."""
     turn = repo.get_turn(conn, turn_id)
-    return turn is not None and turn["status"] == "assigned"
+    if turn is None or turn["status"] != "assigned":
+        return None
+    return {"turn_id": turn["id"], "session_id": turn["session_id"]}
 
 
 def mark_turn_recorded(conn, turn_id: int) -> None:
