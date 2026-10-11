@@ -5,9 +5,10 @@ from pathlib import Path
 from karaoke.recordings import repository as repo
 from karaoke.recordings import sessions_client
 
-# What browsers' MediaRecorder produces: Chrome/Firefox record webm, Safari records mp4.
-ALLOWED_TYPES = {"video/webm": ".webm", "video/mp4": ".mp4"}
-MAX_BYTES = 25 * 1024 * 1024  # ~25 MB: plenty for a 30-second webcam clip
+# Audio only (ADR-5). What browsers' MediaRecorder produces for a microphone:
+# Chrome records webm, Firefox ogg, Safari mp4 (AAC, saved as .m4a).
+ALLOWED_TYPES = {"audio/webm": ".webm", "audio/ogg": ".ogg", "audio/mp4": ".m4a"}
+MAX_BYTES = 5 * 1024 * 1024  # 5 MB: a 30-second voice clip is usually well under 1 MB
 
 
 class TurnNotOpen(Exception):
@@ -17,11 +18,11 @@ class TurnNotOpen(Exception):
 def validate_clip(content_type: str, size_bytes: int) -> str:
     """Check the upload and return the file extension to save it with.
 
-    MediaRecorder sends types like 'video/webm;codecs=vp8,opus', so only the part
+    MediaRecorder sends types like 'audio/webm;codecs=opus', so only the part
     before ';' is compared."""
     base_type = content_type.split(";")[0].strip().lower()
     if base_type not in ALLOWED_TYPES:
-        raise ValueError(f"Unsupported video type {content_type!r}; use webm or mp4")
+        raise ValueError(f"Unsupported audio type {content_type!r}; use webm, ogg or mp4")
     if size_bytes == 0:
         raise ValueError("The clip is empty")
     if size_bytes > MAX_BYTES:

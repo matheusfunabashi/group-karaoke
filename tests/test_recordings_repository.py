@@ -17,7 +17,7 @@ def conn(tmp_path):
 
 def _insert(conn, turn_id, session_id="abc123"):
     return repo.insert_recording(
-        conn, turn_id, session_id, f"{turn_id}.webm", "video/webm", 1024, "2026-10-11T10:00:00"
+        conn, turn_id, session_id, f"{turn_id}.webm", "audio/webm", 1024, "2026-10-11T10:00:00"
     )
 
 

@@ -5,7 +5,7 @@ from karaoke.recordings import repository as repo
 from karaoke.recordings import service
 from karaoke.sessions import service as sessions
 
-CLIP = b"\x1a\x45\xdf\xa3 fake webm bytes"
+CLIP = b"\x1a\x45\xdf\xa3 fake webm audio bytes"
 
 
 @pytest.fixture
@@ -36,17 +36,27 @@ def session(conn):
 
 @pytest.mark.parametrize(
     "content_type, extension",
-    [("video/webm", ".webm"), ("video/webm;codecs=vp8,opus", ".webm"), ("VIDEO/MP4", ".mp4")],
+    [
+        ("audio/webm", ".webm"),
+        ("audio/webm;codecs=opus", ".webm"),
+        ("audio/ogg;codecs=opus", ".ogg"),
+        ("AUDIO/MP4", ".m4a"),
+    ],
 )
-def test_validate_accepts_browser_video_types(content_type, extension):
+def test_validate_accepts_browser_audio_types(content_type, extension):
     assert service.validate_clip(content_type, 1000) == extension
 
 
 @pytest.mark.parametrize(
     "content_type, size",
-    [("image/png", 1000), ("video/webm", 0), ("video/webm", service.MAX_BYTES + 1)],
+    [
+        ("video/webm", 1000),  # video was dropped (ADR-5)
+        ("image/png", 1000),
+        ("audio/webm", 0),
+        ("audio/webm", service.MAX_BYTES + 1),
+    ],
 )
-def test_validate_rejects_wrong_type_empty_and_too_large(content_type, size):
+def test_validate_rejects_video_wrong_type_empty_and_too_large(content_type, size):
     with pytest.raises(ValueError):
         service.validate_clip(content_type, size)
 
@@ -54,10 +64,10 @@ def test_validate_rejects_wrong_type_empty_and_too_large(content_type, size):
 def test_save_writes_file_records_it_and_marks_turn_recorded(conn, media_dir, session):
     turn_id = session["turns"][0]["id"]
 
-    recording = service.save_recording(conn, media_dir, turn_id, "video/webm;codecs=vp8", CLIP)
+    recording = service.save_recording(conn, media_dir, turn_id, "audio/webm;codecs=opus", CLIP)
 
     assert recording["file_name"] == f"{session['id']}_{turn_id}.webm"
-    assert recording["content_type"] == "video/webm"
+    assert recording["content_type"] == "audio/webm"
     assert (media_dir / recording["file_name"]).read_bytes() == CLIP
     assert sessions.get_session(conn, session["id"])["turns"][0]["status"] == "recorded"
 
@@ -65,14 +75,14 @@ def test_save_writes_file_records_it_and_marks_turn_recorded(conn, media_dir, se
 def test_save_refuses_unclaimed_unknown_and_already_recorded_turns(conn, media_dir, session):
     pending_turn = session["turns"][1]["id"]
     with pytest.raises(service.TurnNotOpen):
-        service.save_recording(conn, media_dir, pending_turn, "video/webm", CLIP)
+        service.save_recording(conn, media_dir, pending_turn, "audio/webm", CLIP)
     with pytest.raises(service.TurnNotOpen):
-        service.save_recording(conn, media_dir, 999, "video/webm", CLIP)
+        service.save_recording(conn, media_dir, 999, "audio/webm", CLIP)
 
     claimed_turn = session["turns"][0]["id"]
-    service.save_recording(conn, media_dir, claimed_turn, "video/webm", CLIP)
+    service.save_recording(conn, media_dir, claimed_turn, "audio/webm", CLIP)
     with pytest.raises(service.TurnNotOpen):
-        service.save_recording(conn, media_dir, claimed_turn, "video/webm", CLIP)
+        service.save_recording(conn, media_dir, claimed_turn, "audio/webm", CLIP)
 
 
 def test_failed_save_leaves_no_file_and_no_row(conn, media_dir, session, monkeypatch):
@@ -83,7 +93,7 @@ def test_failed_save_leaves_no_file_and_no_row(conn, media_dir, session, monkeyp
     turn_id = session["turns"][0]["id"]
 
     with pytest.raises(RuntimeError):
-        service.save_recording(conn, media_dir, turn_id, "video/webm", CLIP)
+        service.save_recording(conn, media_dir, turn_id, "audio/webm", CLIP)
 
     assert list(media_dir.iterdir()) == []
     assert repo.get_by_turn(conn, turn_id) is None

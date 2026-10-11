@@ -1,6 +1,6 @@
 import pytest
 
-CLIP = b"\x1a\x45\xdf\xa3 fake webm bytes"
+CLIP = b"\x1a\x45\xdf\xa3 fake webm audio bytes"
 
 
 @pytest.fixture
@@ -15,7 +15,7 @@ def claimed_turn(client):
     return turn_id
 
 
-def _upload(client, turn_id, data=CLIP, content_type="video/webm"):
+def _upload(client, turn_id, data=CLIP, content_type="audio/webm"):
     return client.post(
         "/api/recordings",
         data={"turn_id": str(turn_id)},
@@ -32,7 +32,7 @@ def test_uploaded_clip_is_saved_and_served(client, claimed_turn):
 
 
 def test_upload_errors_become_http_status_codes(client, claimed_turn):
-    assert _upload(client, claimed_turn, content_type="image/png").status_code == 422
+    assert _upload(client, claimed_turn, content_type="video/webm").status_code == 422
     assert _upload(client, claimed_turn, data=b"").status_code == 422
     assert _upload(client, 999).status_code == 409
 
