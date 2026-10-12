@@ -5,7 +5,7 @@ from karaoke.recordings import repository as repo
 from karaoke.recordings import service
 from karaoke.sessions import service as sessions
 
-CLIP = b"\x1a\x45\xdf\xa3 fake webm audio bytes"
+CLIP = b"\x1a\x45\xdf\xa3 fake webm audio bytes" + bytes(2048)
 
 
 @pytest.fixture
@@ -44,7 +44,7 @@ def session(conn):
     ],
 )
 def test_validate_accepts_browser_audio_types(content_type, extension):
-    assert service.validate_clip(content_type, 1000) == extension
+    assert service.validate_clip(content_type, 2000) == extension
 
 
 @pytest.mark.parametrize(
@@ -53,6 +53,7 @@ def test_validate_accepts_browser_audio_types(content_type, extension):
         ("video/webm", 1000),  # video was dropped (ADR-5)
         ("image/png", 1000),
         ("audio/webm", 0),
+        ("audio/webm", 110),  # header only, no sound: what a failed microphone produces
         ("audio/webm", service.MAX_BYTES + 1),
     ],
 )

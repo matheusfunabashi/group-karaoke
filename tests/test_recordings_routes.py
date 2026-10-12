@@ -1,6 +1,6 @@
 import pytest
 
-CLIP = b"\x1a\x45\xdf\xa3 fake webm audio bytes"
+CLIP = b"\x1a\x45\xdf\xa3 fake webm audio bytes" + bytes(2048)
 
 
 @pytest.fixture

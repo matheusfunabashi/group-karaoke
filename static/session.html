@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Session · Group Karaoke</title>
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+  <main>
+    <p><a href="/">← Group Karaoke</a></p>
+    <h1 id="song-title">Loading…</h1>
+    <p id="status" class="muted"></p>
+
+    <div class="card">
+      <strong>Invite people:</strong>
+      <p class="share"><a id="share-link"></a></p>
+    </div>
+
+    <div class="card" id="join-card" hidden>
+      <h2>Join this session</h2>
+      <form id="join-form">
+        <input id="display-name" placeholder="Your name" maxlength="30" required>
+        <button type="submit">Join</button>
+      </form>
+    </div>
+
+    <div class="card">
+      <h2>Parts</h2>
+      <p class="muted">Use headphones when recording, so the backing track isn't recorded too.</p>
+      <div id="turns"></div>
+    </div>
+
+    <p><a id="finale-link">▶ Listen to the finale</a></p>
+
+    <div class="card">
+      <h2>Singers</h2>
+      <p id="participants" class="muted"></p>
+    </div>
+
+    <p id="error" class="error"></p>
+  </main>
+  <script src="/api.js"></script>
+  <script src="/session.js"></script>
+</body>
+</html>

@@ -4,9 +4,24 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Group Karaoke</title>
+  <link rel="stylesheet" href="/style.css">
 </head>
 <body>
-  <h1>Group Karaoke</h1>
-  <p>Pick a song, sing your part, watch everyone together.</p>
+  <main>
+    <h1>Group Karaoke</h1>
+    <p class="muted">Pick a song, everyone sings a part whenever they can, then hear it all together.</p>
+
+    <div class="card">
+      <h2>Start a session</h2>
+      <form id="create-form">
+        <select id="song" required></select>
+        <input id="host-name" placeholder="Your name" maxlength="30" required>
+        <button type="submit">Create</button>
+      </form>
+      <p id="error" class="error"></p>
+    </div>
+  </main>
+  <script src="/api.js"></script>
+  <script src="/home.js"></script>
 </body>
 </html>

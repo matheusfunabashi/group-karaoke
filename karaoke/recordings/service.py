@@ -10,6 +10,9 @@ from karaoke.recordings.finale import build_finale
 # Chrome records webm, Firefox ogg, Safari mp4 (AAC, saved as .m4a).
 ALLOWED_TYPES = {"audio/webm": ".webm", "audio/ogg": ".ogg", "audio/mp4": ".m4a"}
 MAX_BYTES = 5 * 1024 * 1024  # 5 MB: a 30-second voice clip is usually well under 1 MB
+# A file this small is only a container header with no sound in it (e.g. a muted or
+# failed microphone); accepting it would mark the turn as recorded with nothing to play.
+MIN_BYTES = 1024
 
 
 class TurnNotOpen(Exception):
@@ -28,8 +31,8 @@ def validate_clip(content_type: str, size_bytes: int) -> str:
     base_type = content_type.split(";")[0].strip().lower()
     if base_type not in ALLOWED_TYPES:
         raise ValueError(f"Unsupported audio type {content_type!r}; use webm, ogg or mp4")
-    if size_bytes == 0:
-        raise ValueError("The clip is empty")
+    if size_bytes < MIN_BYTES:
+        raise ValueError("The clip is empty; check that your microphone is working")
     if size_bytes > MAX_BYTES:
         raise ValueError(f"The clip is larger than {MAX_BYTES // (1024 * 1024)} MB")
     return ALLOWED_TYPES[base_type]

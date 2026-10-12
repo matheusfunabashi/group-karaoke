@@ -1,0 +1,5 @@
+Generated with the built-in image generation tool.
+
+Use case: illustration-story
+Asset type: wide website background, landscape 16:9.
+Primary request: an inviting Japanese private karaoke room, painted like a richly detailed background from a Japanese animated film. Empty room, upholstered wraparound sofa, low wooden table with two microphones and a karaoke remote, large glowing karaoke screen with abstract musical graphics, acoustic wall panels, soft ceiling lights and neon accents. Nighttime mood with warm amber and muted pink and violet light. Beautiful hand-painted textures, clean perspective and soft atmospheric shading, cozy rather than futuristic. Wide interior view with room details toward edges; center and upper middle relatively calm to allow a website panel over the image. No people, no legible text, no logos, no watermark. This is background artwork only, no website UI.

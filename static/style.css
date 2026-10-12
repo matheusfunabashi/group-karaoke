@@ -1,0 +1,108 @@
+:root {
+  color-scheme: dark;
+  --fg: #fff4e8;
+  --muted: #dcc4ce;
+  --bg: #211622;
+  --card: rgba(47, 28, 43, .94);
+  --accent: #ffb4c8;
+  --line: #765365;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  min-height: 100svh;
+  font: 16px/1.5 system-ui, sans-serif;
+  color: var(--fg);
+  background: var(--bg);
+  isolation: isolate;
+}
+
+/* The room and its soft light sit behind every page without intercepting clicks. */
+body::before,
+body::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+}
+
+body::before {
+  z-index: -2;
+  background: linear-gradient(rgba(21, 11, 27, .16), rgba(21, 11, 27, .38)),
+    url("/images/karaoke-room.jpg") center / cover no-repeat;
+}
+
+body::after {
+  z-index: -1;
+  background: radial-gradient(ellipse at 85% 25%, rgba(194, 105, 255, .24), transparent 55%),
+    radial-gradient(ellipse at 12% 80%, rgba(255, 161, 85, .18), transparent 60%);
+  opacity: .35;
+  animation: room-lights 10s ease-in-out infinite alternate;
+}
+
+@keyframes room-lights {
+  from { opacity: .25; }
+  to { opacity: .85; }
+}
+
+main {
+  width: calc(100% - 32px);
+  max-width: 680px;
+  margin: clamp(24px, 8vh, 88px) auto;
+  padding: clamp(20px, 4vw, 32px);
+  background: rgba(31, 20, 33, .93);
+  border: 1px solid var(--line);
+  border-radius: 20px;
+  box-shadow: 0 24px 80px rgba(12, 5, 19, .4);
+}
+
+h1 { margin: 0 0 4px; line-height: 1.2; }
+h2 { margin-top: 0; font-size: 1.2rem; }
+a { color: var(--accent); text-underline-offset: 3px; }
+.muted { color: var(--muted); }
+.card {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 16px;
+  margin: 16px 0;
+}
+input, select, button {
+  font: inherit;
+  padding: 8px 12px;
+  border-radius: 8px;
+  border: 1px solid var(--line);
+}
+input, select {
+  min-width: 0;
+  background: #251b2a;
+  color: var(--fg);
+}
+input::placeholder { color: var(--muted); opacity: 1; }
+button { background: var(--accent); color: #2c1525; border: none; cursor: pointer; font-weight: 600; }
+button:hover:not(:disabled) { background: #ffd0dc; }
+button:disabled { opacity: .5; cursor: default; }
+button.secondary { background: transparent; color: var(--accent); border: 1px solid var(--accent); }
+button.secondary:hover:not(:disabled) { background: #422838; }
+:focus-visible { outline: 3px solid #ffd08e; outline-offset: 3px; }
+form { display: flex; gap: 8px; flex-wrap: wrap; }
+form input, form select { flex: 1 1 180px; }
+.turn { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 10px 0; border-top: 1px solid var(--line); }
+.turn:first-child { border-top: none; }
+.turn > div { min-width: 0; overflow-wrap: anywhere; }
+.turn button { flex-shrink: 0; }
+.lyrics { font-style: italic; }
+.error { color: #ffb1af; }
+.share { word-break: break-all; }
+
+@media (max-width: 480px) {
+  main { width: calc(100% - 24px); margin: 20px auto; padding: 20px 16px; }
+  .turn { flex-wrap: wrap; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  body::after { animation: none; opacity: .4; }
+}
