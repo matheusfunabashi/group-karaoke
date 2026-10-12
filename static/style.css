@@ -1,0 +1,18 @@
+:root { --fg: #1d1d1f; --muted: #6e6e73; --bg: #fafafa; --card: #fff; --accent: #d6336c; --line: #e5e5ea; }
+* { box-sizing: border-box; }
+body { margin: 0; font: 16px/1.5 system-ui, sans-serif; color: var(--fg); background: var(--bg); }
+main { max-width: 640px; margin: 0 auto; padding: 24px 16px; }
+h1 { margin: 0 0 4px; }
+.muted { color: var(--muted); }
+.card { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 16px; margin: 16px 0; }
+input, select, button { font: inherit; padding: 8px 12px; border-radius: 8px; border: 1px solid var(--line); }
+button { background: var(--accent); color: #fff; border: none; cursor: pointer; }
+button:disabled { opacity: .5; cursor: default; }
+button.secondary { background: transparent; color: var(--accent); border: 1px solid var(--accent); }
+form { display: flex; gap: 8px; flex-wrap: wrap; }
+form input, form select { flex: 1 1 180px; }
+.turn { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 10px 0; border-top: 1px solid var(--line); }
+.turn:first-child { border-top: none; }
+.lyrics { font-style: italic; }
+.error { color: #c92a2a; }
+.share { word-break: break-all; }
