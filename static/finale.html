@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Finale · Group Karaoke</title>
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+  <main>
+    <p><a id="back-link">← Back to the session</a></p>
+    <h1>Finale</h1>
+    <p id="status" class="muted"></p>
+
+    <div class="card">
+      <button id="play">▶ Play</button>
+      <button id="stop" class="secondary" disabled>Stop</button>
+      <div id="playlist"></div>
+    </div>
+
+    <p id="error" class="error"></p>
+  </main>
+  <script src="/api.js"></script>
+  <script src="/finale.js"></script>
+</body>
+</html>
