@@ -125,6 +125,23 @@ def get_turn_open_for_recording(conn, turn_id: int) -> dict | None:
     return {"turn_id": turn["id"], "session_id": turn["session_id"]}
 
 
+def get_timeline(conn, session_id: str) -> dict | None:
+    """What the recordings domain needs to build the finale (see ADR-2): the session's
+    status, the backing track, and each turn's timing. None if the session does not exist."""
+    session = repo.get_session(conn, session_id)
+    if session is None:
+        return None
+    song = repo.get_song(conn, session["song_id"])
+    return {
+        "status": session["status"],
+        "audio_file": song["audio_file"],
+        "turns": [
+            {"turn_id": t["id"], "position": t["position"], "start_ms": t["start_ms"], "end_ms": t["end_ms"]}
+            for t in repo.list_turns(conn, session_id)
+        ],
+    }
+
+
 def mark_turn_recorded(conn, turn_id: int) -> None:
     """Called by the recordings domain after a clip is saved. Completes the session
     when this was the last turn left to record."""

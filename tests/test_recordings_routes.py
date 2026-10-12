@@ -38,3 +38,18 @@ def test_upload_errors_become_http_status_codes(client, claimed_turn):
 
     assert _upload(client, claimed_turn).status_code == 201
     assert _upload(client, claimed_turn).status_code == 409  # already recorded
+
+
+def test_finale_endpoint_returns_playlist_over_http(client):
+    session = client.post("/api/sessions", json={"song_id": 1, "host_name": "Ana"}).json()
+    turn_id = session["turns"][0]["id"]
+    client.post(
+        f"/api/sessions/{session['id']}/turns/{turn_id}/claim",
+        json={"participant_id": session["participants"][0]["id"]},
+    )
+    _upload(client, turn_id)
+
+    finale = client.get(f"/api/recordings/sessions/{session['id']}/finale")
+    assert finale.status_code == 200
+    assert finale.json()["playlist"][0]["clip_url"].startswith("/media/")
+    assert client.get("/api/recordings/sessions/nope/finale").status_code == 404

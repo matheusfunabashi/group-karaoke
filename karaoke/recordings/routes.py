@@ -24,3 +24,11 @@ def upload_recording(
         raise HTTPException(status_code=422, detail=str(e))
     except service.TurnNotOpen as e:
         raise HTTPException(status_code=409, detail=str(e))
+
+
+@router.get("/sessions/{session_id}/finale")
+def get_finale(session_id: str, conn=Depends(get_conn)):
+    try:
+        return service.get_finale(conn, session_id)
+    except service.SessionNotFound as e:
+        raise HTTPException(status_code=404, detail=str(e))
