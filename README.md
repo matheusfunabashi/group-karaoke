@@ -8,6 +8,20 @@ One FastAPI process with two feature domains, each split into `routes.py` (HTTP)
 - `karaoke/sessions/`: songs, sessions, participants, turns
 - `karaoke/recordings/`: clip uploads, validation, finale playlist
 
+`karaoke/recordings/sessions_client.py` is the only place the recordings domain calls the sessions domain (see `ADR.md`, entries 2 and 3).
+
+## API
+| Method | Path | What it does |
+|---|---|---|
+| GET | `/api/sessions/songs` | List the song catalog |
+| POST | `/api/sessions` | Create a session (`song_id`, `host_name`) |
+| GET | `/api/sessions/{id}` | Session with song, participants and turns |
+| POST | `/api/sessions/{id}/participants` | Join (`display_name`) |
+| POST | `/api/sessions/{id}/turns/{turn_id}/claim` | Claim a segment (`participant_id`) |
+| POST | `/api/recordings` | Upload a clip (multipart: `turn_id`, `clip`; webm/ogg/mp4 audio, max 5 MB) |
+| GET | `/api/recordings/sessions/{id}/finale` | Backing track URL and the playlist of clips |
+| GET | `/media/{file_name}` | A saved clip |
+
 ## Setup
 Requires Python 3.12+.
 
@@ -35,4 +49,14 @@ The SQLite database is created automatically at `$DATA_DIR/karaoke.db` on startu
 pytest --cov=karaoke --cov-report=term-missing
 ```
 
-_Coverage result: TODO_
+Result (2026-10-12): **44 tests passed, 100% coverage** of the `karaoke` package (316 statements).
+
+| Module | Cover |
+|---|---|
+| `karaoke/sessions/service.py` (business rules) | 100% |
+| `karaoke/sessions/repository.py` | 100% |
+| `karaoke/recordings/service.py` (business rules) | 100% |
+| `karaoke/recordings/finale.py` | 100% |
+| `karaoke/recordings/repository.py` | 100% |
+
+The browser JavaScript in `static/` is not covered by these tests (see ADR-4).

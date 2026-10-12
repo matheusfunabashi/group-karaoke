@@ -25,6 +25,14 @@ Decision: The `recordings` table stores `turn_id` and `session_id` as plain colu
 Alternatives considered: A real foreign key from `recordings.turn_id` to `turns.id` was rejected because it ties the two domains to one database file, which is exactly what has to be split in Assignment 2. Storing the clip bytes in SQLite as a BLOB was rejected because media files would bloat the database and slow every backup and query, and the browser can stream a file straight from `/media` but not from a database row.
 Consequences: The database can no longer guarantee that a recording points at a real turn; the service layer has to (`get_turn_open_for_recording`). In exchange, moving recordings to its own database later means moving one table and the media folder, with no schema changes.
 
+## 4. Testing approach: real SQLite, business rules first
+Date: 2026-10-12
+Status: Decided
+Context: The brief asks for at least 70% coverage of the core business logic of both domains. Most of the risk is in the rules (who may claim which turn, when a session completes, what counts as a valid clip, the order of the finale), not in FastAPI's routing, and a lot of those rules are enforced by SQLite constraints.
+Decision: Test each layer separately with pytest and pytest-cov: repository tests check the SQL and the constraints (UNIQUE, foreign keys) against a real SQLite file in pytest's `tmp_path`; service tests cover every business rule and error path; `build_finale` is pure logic tested with plain lists; and a few route tests do full HTTP round trips with FastAPI's `TestClient`. Mocks are used only once, with `monkeypatch`, to simulate the sessions domain failing in the middle of `save_recording`, which cannot be triggered otherwise.
+Alternatives considered: Mocking the database in every service test was rejected: it would make the tests pass even if the SQL or a UNIQUE constraint were wrong, and a temporary SQLite file is fast enough (the whole suite runs in under a second). Testing mainly through the HTTP endpoints was rejected because each test would need several requests of setup and a failure would not point at the rule that broke.
+Consequences: Coverage is 100% on both domains' service, repository and finale code. Left thinner: route tests cover the happy path and one example per error code rather than every case (the service tests already do), and the browser JavaScript (microphone recording, finale playback) has no automated tests and is checked by hand.
+
 ## 5. No video: participants record their voice only
 Date: 2026-10-11
 Status: Decided
