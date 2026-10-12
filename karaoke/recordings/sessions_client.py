@@ -13,3 +13,8 @@ def get_open_turn(conn, turn_id: int) -> dict | None:
 
 def mark_recorded(conn, turn_id: int) -> None:
     sessions.mark_turn_recorded(conn, turn_id)
+
+
+def get_timeline(conn, session_id: str) -> dict | None:
+    """{'status', 'audio_file', 'turns': [...]} for the finale, or None if no such session."""
+    return sessions.get_timeline(conn, session_id)

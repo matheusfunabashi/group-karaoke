@@ -97,3 +97,21 @@ def test_failed_save_leaves_no_file_and_no_row(conn, media_dir, session, monkeyp
 
     assert list(media_dir.iterdir()) == []
     assert repo.get_by_turn(conn, turn_id) is None
+
+
+def test_finale_lists_every_turn_with_clip_urls_once_recorded(conn, media_dir, session):
+    first_turn = session["turns"][0]["id"]
+    service.save_recording(conn, media_dir, first_turn, "audio/webm", CLIP)
+
+    finale = service.get_finale(conn, session["id"])
+
+    assert finale["status"] == "open"
+    assert finale["backing_track_url"] == "/audio/row-your-boat.mp3"
+    assert [item["position"] for item in finale["playlist"]] == [1, 2, 3, 4]
+    assert finale["playlist"][0]["clip_url"] == f"/media/{session['id']}_{first_turn}.webm"
+    assert all(item["clip_url"] is None for item in finale["playlist"][1:])
+
+
+def test_finale_for_unknown_session_raises(conn):
+    with pytest.raises(service.SessionNotFound):
+        service.get_finale(conn, "nope")
