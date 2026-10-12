@@ -8,6 +8,9 @@ One FastAPI process with two feature domains, each split into `routes.py` (HTTP)
 - `karaoke/sessions/`: songs, sessions, participants, turns
 - `karaoke/recordings/`: clip uploads, validation, finale playlist
 
+The front end is plain HTML/CSS/JavaScript in `static/`, served by the same process (no build step):
+`index.html` (create a session), `session.html` (join, claim a part, record it) and `finale.html` (play everything together). `static/api.js` holds the shared `fetch` helper.
+
 `karaoke/recordings/sessions_client.py` is the only place the recordings domain calls the sessions domain (see `ADR.md`, entries 2 and 3).
 
 ## API
@@ -33,6 +36,20 @@ python app.py
 ```
 
 Open http://localhost:8000 (API docs at http://localhost:8000/docs).
+
+## How to use it
+1. Open http://localhost:8000, pick a song, type your name and press **Create**.
+2. Copy the **Invite people** link and send it to friends; they open it and **Join** with a name.
+3. Everyone presses **Sing this** on a free part, then **Record** on their own part. Wear headphones:
+   the backing track plays while you record, and the microphone should only pick up your voice.
+   Recording stops by itself at the end of your part.
+4. Open **Listen to the finale** at any time; parts not sung yet stay silent.
+
+Recording uses the browser's `MediaRecorder` (Chrome, Firefox, Safari and Edge). Browsers only
+allow microphone access on `localhost` or HTTPS.
+
+The two songs are traditional, public-domain melodies; the backing tracks in `static/audio/`
+are simple synthesized melodies made for this project.
 
 ## Configuration
 All settings are environment variables; none are required.
