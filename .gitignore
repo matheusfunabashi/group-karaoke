@@ -9,3 +9,4 @@ htmlcov/
 data/
 .env
 .DS_Store
+.idea/
