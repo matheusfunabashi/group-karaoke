@@ -1,0 +1,29 @@
+name: images
+
+on:
+  push:
+    branches: [main, feature/containers]
+
+permissions:
+  contents: read
+  packages: write          # lets GITHUB_TOKEN push to GHCR
+
+jobs:
+  sessions-image:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push sessions image tagged with the commit SHA
+        uses: docker/build-push-action@v6
+        with:
+          context: services/sessions
+          push: true
+          tags: ghcr.io/matheusfunabashi/group-karaoke-sessions:${{ github.sha }}
