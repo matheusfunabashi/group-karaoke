@@ -17,7 +17,8 @@ def conn(tmp_path):
 
 @pytest.fixture
 def session(conn):
-    song_id = service.list_songs(conn)[0]["id"]
+    # Pick the song by title: list_songs is sorted by title, so its order changes when songs are added
+    song_id = next(s["id"] for s in service.list_songs(conn) if s["title"] == "Row, Row, Row Your Boat")
     return service.create_session(conn, song_id, "Ana")
 
 
