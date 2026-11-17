@@ -1,4 +1,4 @@
-"""All configuration comes from environment variables, with safe defaults."""
+"""Configuration for the sessions service, read from environment variables."""
 import os
 from dataclasses import dataclass
 from pathlib import Path
@@ -11,11 +11,7 @@ class Settings:
 
     @property
     def db_path(self) -> Path:
-        return self.data_dir / "karaoke.db"
-
-    @property
-    def media_dir(self) -> Path:
-        return self.data_dir / "media"
+        return self.data_dir / "sessions.db"
 
 
 def load_settings() -> Settings:

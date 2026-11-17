@@ -7,8 +7,8 @@ import secrets
 import sqlite3
 from datetime import datetime, timezone
 
-from karaoke.sessions import repository as repo
-from karaoke.sessions.catalog import SONGS
+from sessions import repository as repo
+from sessions.catalog import SONGS
 
 MAX_NAME_LENGTH = 30
 

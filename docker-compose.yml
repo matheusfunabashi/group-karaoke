@@ -44,6 +44,7 @@ services:
     environment:
       PORT: 8000
       DATABASE_URL: mssql+pymssql://sessions_user:${SESSIONS_DB_PASSWORD}@db:1433/sessions
+      DATA_DIR: /tmp/sessions-data
     ports:
       - "8001:8000"
     depends_on:
@@ -71,3 +72,6 @@ services:
 
 volumes:
   mssql-data:
+
+
+

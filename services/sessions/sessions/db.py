@@ -5,10 +5,8 @@ from pathlib import Path
 
 from fastapi import Request
 
-from karaoke.recordings import repository as recordings_repo
-from karaoke.sessions import repository as sessions_repo
+from sessions import repository
 
-DOMAIN_SCHEMAS = [sessions_repo.SCHEMA, recordings_repo.SCHEMA]
 
 
 def connect(db_path: Path) -> sqlite3.Connection:
@@ -25,8 +23,7 @@ def init_db(db_path: Path) -> None:
     db_path.parent.mkdir(parents=True, exist_ok=True)
     conn = connect(db_path)
     try:
-        for schema in DOMAIN_SCHEMAS:
-            conn.executescript(schema)
+        conn.executescript(repository.SCHEMA)
     finally:
         conn.close()
 

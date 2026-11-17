@@ -1,8 +1,8 @@
 import pytest
 
-from karaoke.db import connect, init_db
-from karaoke.sessions import service
-from karaoke.sessions.catalog import SONGS
+from sessions.db import connect, init_db
+from sessions import service
+from sessions.catalog import SONGS
 
 
 @pytest.fixture

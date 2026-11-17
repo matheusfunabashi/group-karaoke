@@ -14,6 +14,8 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 COPY app.py ./
 
+COPY sessions ./sessions
+
 USER appuser
 
 EXPOSE 8000
