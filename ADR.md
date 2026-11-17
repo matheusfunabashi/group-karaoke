@@ -41,3 +41,25 @@ Decision: Drop video entirely. Clips are audio only (`audio/webm`, `audio/ogg`, 
 Alternatives considered: Keeping video but making it optional was rejected because it keeps all the video code paths (types, size limits, playback) while being used by fewer people. Server-side mixing of the voices into one audio file with ffmpeg was also rejected: it needs an external binary and a background job, which the single-process constraint rules out.
 Consequences: Upload sizes drop by roughly 20x and the browser code only needs the microphone. The product loses the "watch everyone together" moment; if users ask for it, video could return later as a separate media service, since the recordings domain already stores files by name and type only.
 
+## 6. Split into two services, each with its own database
+Date: 2026-11-17
+Status: Decided
+Context: (Assignment 2 requires separate deployable services. ADR-2 already prepared the
+seam: sessions vs recordings, with recordings only knowing a turn_id. The two parts
+have different load: small rows vs audio uploads.)
+Decision: (Two services, `sessions` and `recordings`, each with its own Dockerfile and
+image in GHCR tagged with the commit SHA, and each with its own SQL Server database and
+login that can only access that database (db_owner on its own db only). Recordings
+reaches sessions over HTTP through SESSIONS_URL, never through the database. The UI is
+static files served separately (nginx locally, Static Web Apps on Azure). Locally,
+docker compose runs both services, SQL Server, a one-off db-init job and nginx.)
+Alternatives considered: (1) One shared database with both services' tables: rejected,
+because either service could query the other's tables and the split would only be
+pretend. (2) One login with access to both databases: rejected for the same reason,
+plus a leaked password would expose everything. (3) More services, e.g. a separate
+finale service: rejected because finale is pure logic over recordings data, and every
+extra service adds a network hop and a deployment.)
+Consequences: (What gets harder: a network call can fail or be slow, so recordings needs
+timeouts and partial-failure handling; no SQL joins across the two databases; two
+images and two deploy jobs to maintain. What gets easier: each service can be deployed,
+scaled and migrated on its own.)
