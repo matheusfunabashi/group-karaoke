@@ -1,0 +1,73 @@
+services:
+  db:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    platform: linux/amd64
+    environment:
+      ACCEPT_EULA: "Y"
+      MSSQL_SA_PASSWORD: ${MSSQL_SA_PASSWORD}
+    volumes:
+      - mssql-data:/var/opt/mssql
+    healthcheck:
+      test: ["CMD-SHELL", "/opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P \"$$MSSQL_SA_PASSWORD\" -C -Q 'SELECT 1' -b"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 20s
+
+  db-init:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    platform: linux/amd64
+    depends_on:
+      db:
+        condition: service_healthy
+    volumes:
+      - ./db/init.sql:/init.sql:ro
+    entrypoint:
+      - /opt/mssql-tools18/bin/sqlcmd
+      - -S
+      - db
+      - -U
+      - sa
+      - -P
+      - ${MSSQL_SA_PASSWORD}
+      - -C
+      - -b
+      - -i
+      - /init.sql
+      - -v
+      - SESSIONS_DB_PASSWORD=${SESSIONS_DB_PASSWORD}
+      - RECORDINGS_DB_PASSWORD=${RECORDINGS_DB_PASSWORD}
+    restart: "no"
+
+  sessions:
+    build: ./services/sessions
+    environment:
+      PORT: 8000
+      DATABASE_URL: mssql+pymssql://sessions_user:${SESSIONS_DB_PASSWORD}@db:1433/sessions
+    ports:
+      - "8001:8000"
+    depends_on:
+      db-init:
+        condition: service_completed_successfully
+
+  recordings:
+    build: ./services/recordings
+    environment:
+      PORT: 8000
+      DATABASE_URL: mssql+pymssql://recordings_user:${RECORDINGS_DB_PASSWORD}@db:1433/recordings
+      SESSIONS_URL: http://sessions:8000
+    ports:
+      - "8002:8000"
+    depends_on:
+      db-init:
+        condition: service_completed_successfully
+
+  ui:
+    image: nginx:alpine
+    volumes:
+      - ./static:/usr/share/nginx/html:ro
+    ports:
+      - "8080:80"
+
+volumes:
+  mssql-data:
