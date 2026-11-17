@@ -2,8 +2,8 @@
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 
-from karaoke.db import get_conn
-from karaoke.sessions import service
+from sessions.db import get_conn
+from sessions import service
 
 router = APIRouter()
 
@@ -56,3 +56,28 @@ def join_session(session_id: str, body: JoinBody, conn=Depends(get_conn)):
 @router.post("/{session_id}/turns/{turn_id}/claim")
 def claim_turn(session_id: str, turn_id: int, body: ClaimBody, conn=Depends(get_conn)):
     return _call(service.claim_turn, conn, session_id, turn_id, body.participant_id)
+
+
+
+# --- Called only by the recordings service, over HTTP (the seam, ADR-2 and ADR-6) ---
+
+@router.get("/turns/{turn_id}/open")
+def get_open_turn(turn_id: int, conn=Depends(get_conn)):
+    turn = service.get_turn_open_for_recording(conn, turn_id)
+    if turn is None:
+        raise HTTPException(status_code=404, detail=f"Turn {turn_id} is not waiting for a recording")
+    return turn
+
+
+@router.post("/turns/{turn_id}/recorded")
+def mark_turn_recorded(turn_id: int, conn=Depends(get_conn)):
+    _call(service.mark_turn_recorded, conn, turn_id)
+    return {"turn_id": turn_id, "status": "recorded"}
+
+
+@router.get("/{session_id}/timeline")
+def get_timeline(session_id: str, conn=Depends(get_conn)):
+    timeline = service.get_timeline(conn, session_id)
+    if timeline is None:
+        raise HTTPException(status_code=404, detail=f"Session {session_id} not found")
+    return timeline
