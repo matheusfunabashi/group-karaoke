@@ -2,8 +2,8 @@ import sqlite3
 
 import pytest
 
-from karaoke.db import connect, init_db
-from karaoke.recordings import repository as repo
+from recordings.db import connect, init_db
+from recordings import repository as repo
 
 
 @pytest.fixture

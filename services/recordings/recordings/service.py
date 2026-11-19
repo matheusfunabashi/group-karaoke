@@ -2,9 +2,9 @@
 from datetime import datetime, timezone
 from pathlib import Path
 
-from karaoke.recordings import repository as repo
-from karaoke.recordings import sessions_client
-from karaoke.recordings.finale import build_finale
+from recordings import repository as repo
+from recordings import sessions_client
+from recordings.finale import build_finale
 
 # Audio only (ADR-5). What browsers' MediaRecorder produces for a microphone:
 # Chrome records webm, Firefox ogg, Safari mp4 (AAC, saved as .m4a).
@@ -41,7 +41,7 @@ def validate_clip(content_type: str, size_bytes: int) -> str:
 def save_recording(conn, media_dir: Path, turn_id: int, content_type: str, data: bytes) -> dict:
     """Validate a clip, write it to disk, record it, and mark the turn as recorded."""
     extension = validate_clip(content_type, len(data))
-    turn = sessions_client.get_open_turn(conn, turn_id)
+    turn = sessions_client.get_open_turn(turn_id)
     if turn is None or repo.get_by_turn(conn, turn_id) is not None:
         raise TurnNotOpen(f"Turn {turn_id} is not waiting for a recording")
 
@@ -50,15 +50,15 @@ def save_recording(conn, media_dir: Path, turn_id: int, content_type: str, data:
     path = media_dir / file_name
     path.write_bytes(data)
     try:
-        repo.insert_recording(
-            conn, turn_id, turn["session_id"], file_name, content_type.split(";")[0].strip(),
-            len(data), datetime.now(timezone.utc).isoformat(timespec="seconds"),
-        )
-        # mark_recorded runs `with conn:`, which commits the INSERT above together with the
-        # turn update, or rolls both back if it fails: the two can never disagree.
-        sessions_client.mark_recorded(conn, turn_id)
+        # `with conn:` commits the INSERT only if the block finishes, including the HTTP call
+        # that marks the turn recorded in the sessions service; if that call fails, it rolls back.
+        with conn:
+            repo.insert_recording(
+                conn, turn_id, turn["session_id"], file_name, content_type.split(";")[0].strip(),
+                len(data), datetime.now(timezone.utc).isoformat(timespec="seconds"),
+            )
+            sessions_client.mark_recorded(turn_id)
     except Exception:
-        conn.rollback()
         path.unlink(missing_ok=True)  # don't leave an orphan file behind
         raise
     return repo.get_by_turn(conn, turn_id)
@@ -69,7 +69,7 @@ def get_finale(conn, session_id: str) -> dict:
 
     Works before the session is complete too, so people can preview it: turns
     without a clip yet have clip_url None (see build_finale)."""
-    timeline = sessions_client.get_timeline(conn, session_id)
+    timeline = sessions_client.get_timeline(session_id)
     if timeline is None:
         raise SessionNotFound(f"Session {session_id} not found")
     return {

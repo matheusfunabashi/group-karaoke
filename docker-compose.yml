@@ -57,6 +57,7 @@ services:
       PORT: 8000
       DATABASE_URL: mssql+pymssql://recordings_user:${RECORDINGS_DB_PASSWORD}@db:1433/recordings
       SESSIONS_URL: http://sessions:8000
+      DATA_DIR: /tmp/recordings-data
     ports:
       - "8002:8000"
     depends_on:
@@ -66,7 +67,7 @@ services:
   ui:
     image: nginx:alpine
     volumes:
-      - ./static:/usr/share/nginx/html:ro
+      - ./ui:/usr/share/nginx/html:ro
     ports:
       - "8080:80"
 
