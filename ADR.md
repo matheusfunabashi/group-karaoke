@@ -19,7 +19,7 @@ Consequences: Splitting later means replacing one in-process function call with 
 
 ## 3. Recordings reference turns by id, without a cross-domain foreign key
 Date: 2026-10-11
-Status: Decided
+Status: Decided; storing clips on disk is superseded by ADR-7
 Context: Every recording belongs to exactly one turn, which lives in the sessions domain's tables. Inside one SQLite file a foreign key would be easy, but ADR-2 says the recordings domain must be movable to its own service and database later.
 Decision: The `recordings` table stores `turn_id` and `session_id` as plain columns with no `FOREIGN KEY` into `turns`/`sessions`; `UNIQUE (turn_id)` enforces one clip per turn, and the sessions service checks that a turn is valid before a recording is saved. Inside the sessions domain, tables keep real foreign keys (`song_segments -> songs`, `turns -> sessions/segments/participants`). Audio clips are stored on disk under `DATA_DIR/media/`; SQLite only stores their file name, type and size.
 Alternatives considered: A real foreign key from `recordings.turn_id` to `turns.id` was rejected because it ties the two domains to one database file, which is exactly what has to be split in Assignment 2. Storing the clip bytes in SQLite as a BLOB was rejected because media files would bloat the database and slow every backup and query, and the browser can stream a file straight from `/media` but not from a database row.
@@ -44,22 +44,30 @@ Consequences: Upload sizes drop by roughly 20x and the browser code only needs t
 ## 6. Split into two services, each with its own database
 Date: 2026-11-17
 Status: Decided
-Context: (Assignment 2 requires separate deployable services. ADR-2 already prepared the
+Context: Assignment 2 requires separate deployable services. ADR-2 already prepared the
 seam: sessions vs recordings, with recordings only knowing a turn_id. The two parts
-have different load: small rows vs audio uploads.)
-Decision: (Two services, `sessions` and `recordings`, each with its own Dockerfile and
+have different load: small rows vs audio uploads.
+Decision: Two services, `sessions` and `recordings`, each with its own Dockerfile and
 image in GHCR tagged with the commit SHA, and each with its own SQL Server database and
 login that can only access that database (db_owner on its own db only). Recordings
 reaches sessions over HTTP through SESSIONS_URL, never through the database. The UI is
 static files served separately (nginx locally, Static Web Apps on Azure). Locally,
-docker compose runs both services, SQL Server, a one-off db-init job and nginx.)
+docker compose runs both services, SQL Server, a one-off db-init job and nginx.
 Alternatives considered: (1) One shared database with both services' tables: rejected,
 because either service could query the other's tables and the split would only be
 pretend. (2) One login with access to both databases: rejected for the same reason,
 plus a leaked password would expose everything. (3) More services, e.g. a separate
 finale service: rejected because finale is pure logic over recordings data, and every
-extra service adds a network hop and a deployment.)
-Consequences: (What gets harder: a network call can fail or be slow, so recordings needs
+extra service adds a network hop and a deployment.
+Consequences: What gets harder: a network call can fail or be slow, so recordings needs
 timeouts and partial-failure handling; no SQL joins across the two databases; two
 images and two deploy jobs to maintain. What gets easier: each service can be deployed,
-scaled and migrated on its own.)
+scaled and migrated on its own.
+
+## 7. Store audio clips in the recordings database
+Date: 2026-11-19
+Status: Decided
+Context: Until now, clips were saved as files on the container's disk (ADR-3). On Azure that doesn't work: the brief only allows Container Apps, Azure SQL and Static Web Apps, so there is no storage account, and a container's disk is lost when it scales to zero, so saved clips would disappear. The clips are small (usually under 1 MB, at most 5 MB), so the database can hold them.
+Decision: Add an `audio VARBINARY(MAX)` column to the `recordings` table that stores each clip's bytes. A new endpoint reads them and returns them with their `content_type`. The `/media` folder is no longer needed, so it's removed.
+Alternatives considered: Azure Blob Storage, the usual place for files, was rejected because it needs a storage account, which the brief doesn't allow, and it adds access keys to protect. Azure Files was rejected for the same reason. Keeping clips on the container's disk was rejected because they are lost whenever the container restarts or scales to zero.
+Consequences: Saving a clip and its details becomes one transaction, so there are no orphan files and no file clean-up code. Clips are now included in the database backups. On the downside, the database grows by about 1 MB per clip, and every playback goes through the recordings service and the database, which is slower than serving a file directly. The 5 MB limit keeps each row a reasonable size.
