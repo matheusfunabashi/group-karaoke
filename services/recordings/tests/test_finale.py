@@ -1,4 +1,4 @@
-from karaoke.recordings.finale import build_finale
+from recordings.finale import build_finale
 
 TURNS = [
     {"turn_id": 12, "position": 2, "start_ms": 6000, "end_ms": 12000},

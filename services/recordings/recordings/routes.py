@@ -1,8 +1,8 @@
 """HTTP layer for the recordings domain. Thin: parse request, call service, return response."""
 from fastapi import APIRouter, Depends, File, Form, HTTPException, Request, UploadFile
 
-from karaoke.db import get_conn
-from karaoke.recordings import service
+from recordings.db import get_conn
+from recordings import service
 
 router = APIRouter()
 
