@@ -94,8 +94,9 @@ boot 2: participants=0 recordings=0 sessions=0 song_segments=8 songs=2 turns=0
 Recording uses the browser's `MediaRecorder` (Chrome, Firefox, Safari and Edge). Browsers only
 allow microphone access on `localhost` or HTTPS.
 
-The two songs are traditional, public-domain melodies; the backing tracks in `static/audio/`
-are simple synthesized melodies made for this project.
+Two songs are traditional, public-domain melodies whose backing tracks in `static/audio/` are
+simple synthesized melodies made for this project. *Payphone* (Maroon 5) is copyrighted and is
+included only as a non-commercial class demo; it is not licensed for any other use.
 
 ## Configuration
 All settings are environment variables; none are required.
