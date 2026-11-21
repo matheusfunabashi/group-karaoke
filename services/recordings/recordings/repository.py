@@ -1,42 +1,31 @@
-"""SQL access for the recordings domain. Only this module touches this domain's tables."""
+"""SQL access for the recordings domain. Only this module touches this domain's tables.
 
-# turn_id and session_id point at the sessions domain but deliberately have no
-# FOREIGN KEY: the recordings table must be movable to its own database later (ADR-3).
-SCHEMA = """
-CREATE TABLE IF NOT EXISTS recordings (
-    id           INTEGER PRIMARY KEY,
-    turn_id      INTEGER NOT NULL UNIQUE,
-    session_id   TEXT NOT NULL,
-    file_name    TEXT NOT NULL,
-    content_type TEXT NOT NULL,
-    size_bytes   INTEGER NOT NULL,
-    created_at   TEXT NOT NULL
-);
-
-CREATE INDEX IF NOT EXISTS idx_recordings_session ON recordings (session_id);
-"""
+The table itself is created by the versioned files in ../migrations (see db.migrate).
+pymssql uses %s for every parameter, whatever its type."""
 
 
 def insert_recording(
-    conn, turn_id: int, session_id: str, file_name: str, content_type: str, size_bytes: int, created_at: str
+    conn, turn_id: int, session_id: str, file_name: str, content_type: str, size_bytes: int, created_at
 ) -> int:
-    cur = conn.execute(
+    cur = conn.cursor()
+    cur.execute(
         """
         INSERT INTO recordings (turn_id, session_id, file_name, content_type, size_bytes, created_at)
-        VALUES (?, ?, ?, ?, ?, ?)
+        OUTPUT INSERTED.id
+        VALUES (%s, %s, %s, %s, %s, %s)
         """,
         (turn_id, session_id, file_name, content_type, size_bytes, created_at),
     )
-    return cur.lastrowid
+    return cur.fetchone()["id"]
 
 
 def get_by_turn(conn, turn_id: int) -> dict | None:
-    row = conn.execute("SELECT * FROM recordings WHERE turn_id = ?", (turn_id,)).fetchone()
-    return dict(row) if row is not None else None
+    cur = conn.cursor()
+    cur.execute("SELECT * FROM recordings WHERE turn_id = %s", (turn_id,))
+    return cur.fetchone()
 
 
 def list_for_session(conn, session_id: str) -> list[dict]:
-    rows = conn.execute(
-        "SELECT * FROM recordings WHERE session_id = ? ORDER BY id", (session_id,)
-    ).fetchall()
-    return [dict(row) for row in rows]
+    cur = conn.cursor()
+    cur.execute("SELECT * FROM recordings WHERE session_id = %s ORDER BY id", (session_id,))
+    return cur.fetchall()

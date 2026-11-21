@@ -16,6 +16,8 @@ COPY app.py ./
 
 COPY recordings ./recordings
 
+COPY migrations ./migrations
+
 USER appuser
 
 EXPOSE 8000

@@ -7,6 +7,8 @@ services:
       MSSQL_SA_PASSWORD: ${MSSQL_SA_PASSWORD}
     volumes:
       - mssql-data:/var/opt/mssql
+    ports:
+      - "127.0.0.1:1433:1433"   # only for running the tests from this machine (TEST_DATABASE_URL)
     healthcheck:
       test: ["CMD-SHELL", "/opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P \"$$MSSQL_SA_PASSWORD\" -C -Q 'SELECT 1' -b"]
       interval: 10s
@@ -44,7 +46,6 @@ services:
     environment:
       PORT: 8000
       DATABASE_URL: mssql+pymssql://sessions_user:${SESSIONS_DB_PASSWORD}@db:1433/sessions
-      DATA_DIR: /tmp/sessions-data
     ports:
       - "8001:8000"
     depends_on:

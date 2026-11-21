@@ -1,18 +1,19 @@
 import pytest
 
-from sessions.db import connect, init_db
 from sessions import service
 from sessions.catalog import SONGS
 
 
 @pytest.fixture
-def conn(tmp_path):
-    db_path = tmp_path / "test.db"
-    init_db(db_path)
-    conn = connect(db_path)
+def conn(conn):
+    """The conftest connection (empty, migrated test database), with the song catalog loaded."""
     service.seed_catalog(conn)
-    yield conn
-    conn.close()
+    return conn
+
+
+@pytest.fixture
+def song_id(conn):
+    return service.list_songs(conn)[0]["id"]
 
 
 @pytest.fixture
@@ -35,16 +36,16 @@ def test_create_session_adds_host_and_one_pending_turn_per_segment(session):
     assert [t["position"] for t in session["turns"]] == [1, 2, 3, 4]
 
 
-def test_create_session_rejects_unknown_song_and_blank_host(conn):
+def test_create_session_rejects_unknown_song_and_blank_host(conn, song_id):
     with pytest.raises(service.NotFound):
         service.create_session(conn, 999, "Ana")
     with pytest.raises(ValueError):
-        service.create_session(conn, 1, "   ")
+        service.create_session(conn, song_id, "   ")
 
 
-def test_session_ids_are_random_not_sequential(conn):
-    a = service.create_session(conn, 1, "Ana")["id"]
-    b = service.create_session(conn, 1, "Ana")["id"]
+def test_session_ids_are_random_not_sequential(conn, song_id):
+    a = service.create_session(conn, song_id, "Ana")["id"]
+    b = service.create_session(conn, song_id, "Ana")["id"]
     assert a != b and not a.isdigit()
 
 
@@ -71,8 +72,8 @@ def test_claim_turn_assigns_it_once(conn, session):
         service.claim_turn(conn, session["id"], turn_id, ana_id)
 
 
-def test_claim_turn_checks_turn_and_participant_belong_to_session(conn, session):
-    other = service.create_session(conn, 1, "Zoe")
+def test_claim_turn_checks_turn_and_participant_belong_to_session(conn, session, song_id):
+    other = service.create_session(conn, song_id, "Zoe")
     zoe_id = other["participants"][0]["id"]
     turn_id = session["turns"][0]["id"]
 

@@ -4,6 +4,7 @@ from pathlib import Path
 
 from recordings import repository as repo
 from recordings import sessions_client
+from recordings.db import transaction
 from recordings.finale import build_finale
 
 # Audio only (ADR-5). What browsers' MediaRecorder produces for a microphone:
@@ -50,12 +51,12 @@ def save_recording(conn, media_dir: Path, turn_id: int, content_type: str, data:
     path = media_dir / file_name
     path.write_bytes(data)
     try:
-        # `with conn:` commits the INSERT only if the block finishes, including the HTTP call
+        # The transaction commits the INSERT only if the block finishes, including the HTTP call
         # that marks the turn recorded in the sessions service; if that call fails, it rolls back.
-        with conn:
+        with transaction(conn):
             repo.insert_recording(
                 conn, turn_id, turn["session_id"], file_name, content_type.split(";")[0].strip(),
-                len(data), datetime.now(timezone.utc).isoformat(timespec="seconds"),
+                len(data), datetime.now(timezone.utc).replace(tzinfo=None, microsecond=0),
             )
             sessions_client.mark_recorded(turn_id)
     except Exception:

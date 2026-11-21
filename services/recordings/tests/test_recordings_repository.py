@@ -1,23 +1,16 @@
-import sqlite3
+from datetime import datetime
 
+import pymssql
 import pytest
 
-from recordings.db import connect, init_db
 from recordings import repository as repo
 
-
-@pytest.fixture
-def conn(tmp_path):
-    db_path = tmp_path / "test.db"
-    init_db(db_path)
-    conn = connect(db_path)
-    yield conn
-    conn.close()
+# The `conn` fixture (tests/conftest.py) is a connection to an empty, migrated test database.
 
 
 def _insert(conn, turn_id, session_id="abc123"):
     return repo.insert_recording(
-        conn, turn_id, session_id, f"{turn_id}.webm", "audio/webm", 1024, "2026-10-11T10:00:00"
+        conn, turn_id, session_id, f"{turn_id}.webm", "audio/webm", 1024, datetime(2026, 10, 11, 10, 0)
     )
 
 
@@ -31,7 +24,7 @@ def test_recording_is_found_by_turn(conn):
 
 def test_only_one_recording_per_turn(conn):
     _insert(conn, turn_id=7)
-    with pytest.raises(sqlite3.IntegrityError):
+    with pytest.raises(pymssql.IntegrityError):
         _insert(conn, turn_id=7)
 
 
