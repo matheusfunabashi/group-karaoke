@@ -19,10 +19,11 @@ def test_full_flow_over_http(client):
 
 
 def test_service_errors_become_http_status_codes(client):
+    song_id = client.get("/api/sessions/songs").json()[0]["id"]
     assert client.get("/api/sessions/missing").status_code == 404
-    assert client.post("/api/sessions", json={"song_id": 1, "host_name": ""}).status_code == 422
+    assert client.post("/api/sessions", json={"song_id": song_id, "host_name": ""}).status_code == 422
 
-    session_id = client.post("/api/sessions", json={"song_id": 1, "host_name": "Ana"}).json()["id"]
+    session_id = client.post("/api/sessions", json={"song_id": song_id, "host_name": "Ana"}).json()["id"]
     duplicate = client.post(f"/api/sessions/{session_id}/participants", json={"display_name": "Ana"})
     assert duplicate.status_code == 409
 

@@ -16,6 +16,8 @@ COPY app.py ./
 
 COPY sessions ./sessions
 
+COPY migrations ./migrations
+
 USER appuser
 
 EXPOSE 8000

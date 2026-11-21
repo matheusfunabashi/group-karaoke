@@ -1,18 +1,11 @@
-import sqlite3
+from datetime import datetime
 
+import pymssql
 import pytest
 
-from sessions.db import connect, init_db
 from sessions import repository as repo
 
-
-@pytest.fixture
-def conn(tmp_path):
-    db_path = tmp_path / "test.db"
-    init_db(db_path)
-    conn = connect(db_path)
-    yield conn
-    conn.close()
+# The `conn` fixture (tests/conftest.py) is a connection to an empty, migrated test database.
 
 
 @pytest.fixture
@@ -31,7 +24,7 @@ def test_segments_come_back_in_song_order(conn, song_id):
 
 
 def test_session_defaults_to_open_and_status_can_change(conn, song_id):
-    repo.insert_session(conn, "abc123", song_id, "Ana", "2026-10-08T10:00:00")
+    repo.insert_session(conn, "abc123", song_id, "Ana", datetime(2026, 10, 8, 10, 0))
     assert repo.get_session(conn, "abc123")["status"] == "open"
 
     repo.set_session_status(conn, "abc123", "complete")
@@ -40,17 +33,17 @@ def test_session_defaults_to_open_and_status_can_change(conn, song_id):
 
 
 def test_same_display_name_cannot_join_a_session_twice(conn, song_id):
-    repo.insert_session(conn, "abc123", song_id, "Ana", "2026-10-08T10:00:00")
-    repo.insert_participant(conn, "abc123", "Ben", "2026-10-08T10:01:00")
+    repo.insert_session(conn, "abc123", song_id, "Ana", datetime(2026, 10, 8, 10, 0))
+    repo.insert_participant(conn, "abc123", "Ben", datetime(2026, 10, 8, 10, 1))
 
-    with pytest.raises(sqlite3.IntegrityError):
-        repo.insert_participant(conn, "abc123", "Ben", "2026-10-08T10:02:00")
+    with pytest.raises(pymssql.IntegrityError):
+        repo.insert_participant(conn, "abc123", "Ben", datetime(2026, 10, 8, 10, 2))
     assert len(repo.list_participants(conn, "abc123")) == 1
 
 
 def test_turns_join_segment_timing_and_can_be_assigned(conn, song_id):
-    repo.insert_session(conn, "abc123", song_id, "Ana", "2026-10-08T10:00:00")
-    ben = repo.insert_participant(conn, "abc123", "Ben", "2026-10-08T10:01:00")
+    repo.insert_session(conn, "abc123", song_id, "Ana", datetime(2026, 10, 8, 10, 0))
+    ben = repo.insert_participant(conn, "abc123", "Ben", datetime(2026, 10, 8, 10, 1))
     turn_ids = [repo.insert_turn(conn, "abc123", s["id"]) for s in repo.list_segments(conn, song_id)]
 
     repo.update_turn(conn, turn_ids[0], ben, "assigned")
@@ -65,5 +58,5 @@ def test_turns_join_segment_timing_and_can_be_assigned(conn, song_id):
 
 def test_turn_must_point_at_a_real_session(conn, song_id):
     segment_id = repo.list_segments(conn, song_id)[0]["id"]
-    with pytest.raises(sqlite3.IntegrityError):
+    with pytest.raises(pymssql.IntegrityError):
         repo.insert_turn(conn, "no-such-session", segment_id)

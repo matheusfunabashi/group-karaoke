@@ -4,10 +4,12 @@ Turn lifecycle: pending (nobody yet) -> assigned (claimed by a participant) -> r
 A session becomes 'complete' once every turn is recorded.
 """
 import secrets
-import sqlite3
 from datetime import datetime, timezone
 
+import pymssql
+
 from sessions import repository as repo
+from sessions.db import transaction
 from sessions.catalog import SONGS
 
 MAX_NAME_LENGTH = 30
@@ -21,8 +23,9 @@ class Conflict(Exception):
     """The request is valid but clashes with the current state (name taken, turn claimed...)."""
 
 
-def _now() -> str:
-    return datetime.now(timezone.utc).isoformat(timespec="seconds")
+def _now() -> datetime:
+    # Stored in DATETIME2 columns, which have no time zone: always UTC, by convention
+    return datetime.now(timezone.utc).replace(tzinfo=None, microsecond=0)
 
 
 def _new_session_id() -> str:
@@ -40,7 +43,7 @@ def seed_catalog(conn) -> None:
     """Insert the built-in songs on first start. Does nothing if songs already exist."""
     if repo.list_songs(conn):
         return
-    with conn:
+    with transaction(conn):
         for song in SONGS:
             song_id = repo.insert_song(
                 conn, song["title"], song["artist"], song["audio_file"], song["duration_ms"]
@@ -62,7 +65,7 @@ def create_session(conn, song_id: int, host_name: str) -> dict:
 
     session_id = _new_session_id()
     now = _now()
-    with conn:  # one transaction: session, host and turns are saved together or not at all
+    with transaction(conn):  # one transaction: session, host and turns are saved together or not at all
         repo.insert_session(conn, session_id, song_id, host_name, now)
         repo.insert_participant(conn, session_id, host_name, now)
         for segment in repo.list_segments(conn, song_id):
@@ -93,9 +96,9 @@ def join_session(conn, session_id: str, display_name: str) -> dict:
         raise Conflict("This session is already complete")
 
     try:
-        with conn:
+        with transaction(conn):
             participant_id = repo.insert_participant(conn, session_id, display_name, _now())
-    except sqlite3.IntegrityError:
+    except pymssql.IntegrityError:
         raise Conflict(f"The name {display_name!r} is already taken in this session") from None
     return {"id": participant_id, "session_id": session_id, "display_name": display_name}
 
@@ -111,7 +114,7 @@ def claim_turn(conn, session_id: str, turn_id: int, participant_id: int) -> dict
     if turn["status"] != "pending":
         raise Conflict("This turn has already been claimed")
 
-    with conn:
+    with transaction(conn):
         repo.update_turn(conn, turn_id, participant_id, "assigned")
     return repo.get_turn(conn, turn_id)
 
@@ -151,7 +154,7 @@ def mark_turn_recorded(conn, turn_id: int) -> None:
     if turn["status"] != "assigned":
         raise Conflict("Only a claimed turn can be recorded")
 
-    with conn:
+    with transaction(conn):
         repo.update_turn(conn, turn_id, turn["participant_id"], "recorded")
         turns = repo.list_turns(conn, turn["session_id"])
         if all(t["status"] == "recorded" for t in turns):
