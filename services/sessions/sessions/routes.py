@@ -17,8 +17,8 @@ class JoinBody(BaseModel):
     display_name: str
 
 
-class ClaimBody(BaseModel):
-    participant_id: int
+class StartBody(BaseModel):
+    participant_id: int  # must be the host's
 
 
 def _call(fn, *args):
@@ -53,9 +53,10 @@ def join_session(session_id: str, body: JoinBody, conn=Depends(get_conn)):
     return _call(service.join_session, conn, session_id, body.display_name)
 
 
-@router.post("/{session_id}/turns/{turn_id}/claim")
-def claim_turn(session_id: str, turn_id: int, body: ClaimBody, conn=Depends(get_conn)):
-    return _call(service.claim_turn, conn, session_id, turn_id, body.participant_id)
+@router.post("/{session_id}/start")
+def start_session(session_id: str, body: StartBody, conn=Depends(get_conn)):
+    """The host deals the song's lines to everyone who has joined (body: the host's participant_id)."""
+    return _call(service.start_session, conn, session_id, body.participant_id)
 
 
 

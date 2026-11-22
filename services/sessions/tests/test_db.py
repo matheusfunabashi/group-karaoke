@@ -58,7 +58,7 @@ def test_migrate_applies_each_migration_once(conn):
     assert db.migrate(conn) == []  # the fixture already migrated this database
     cur = conn.cursor()
     cur.execute("SELECT version FROM schema_migrations")
-    assert [row["version"] for row in cur.fetchall()] == ["V001__create_sessions_tables"]
+    assert [row["version"] for row in cur.fetchall()] == ["V001__create_sessions_tables", "V002__deal_lines_to_players"]
 
 
 def test_transaction_rolls_back_when_the_block_fails(conn):

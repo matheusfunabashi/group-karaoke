@@ -51,7 +51,12 @@ def get_song(conn, song_id: int) -> dict | None:
 
 
 def list_songs(conn) -> list[dict]:
-    return _all(conn, "SELECT * FROM songs ORDER BY title")
+    """The catalog: songs that are not retired (see migration V002)."""
+    return _all(conn, "SELECT * FROM songs WHERE retired = 0 ORDER BY title")
+
+
+def retire_song(conn, song_id: int) -> None:
+    _execute(conn, "UPDATE songs SET retired = 1 WHERE id = %s", (song_id,))
 
 
 def list_segments(conn, song_id: int) -> list[dict]:
@@ -92,11 +97,18 @@ def list_participants(conn, session_id: str) -> list[dict]:
 
 # --- turns ---------------------------------------------------------------
 
-def insert_turn(conn, session_id: str, segment_id: int) -> int:
+def insert_turn(
+    conn, session_id: str, segment_id: int, segment_count: int = 1,
+    participant_id: int | None = None, status: str = "pending",
+) -> int:
+    """A turn that starts at segment_id and covers segment_count neighbouring lines."""
     return _insert(
         conn,
-        "INSERT INTO turns (session_id, segment_id) OUTPUT INSERTED.id VALUES (%s, %s)",
-        (session_id, segment_id),
+        """
+        INSERT INTO turns (session_id, segment_id, segment_count, participant_id, status)
+        OUTPUT INSERTED.id VALUES (%s, %s, %s, %s, %s)
+        """,
+        (session_id, segment_id, segment_count, participant_id, status),
     )
 
 
@@ -105,14 +117,24 @@ def get_turn(conn, turn_id: int) -> dict | None:
 
 
 def list_turns(conn, session_id: str) -> list[dict]:
-    """Turns in song order, with each segment's timing and lyrics joined in."""
+    """Turns in song order, numbered 1, 2, 3... A turn covering several lines gets the start of
+    its first line, the end of its last line, and their lyrics joined with ' / '."""
     return _all(
         conn,
         """
-        SELECT t.*, s.position, s.start_ms, s.end_ms, s.lyrics
-        FROM turns t JOIN song_segments s ON s.id = t.segment_id
+        SELECT t.id, t.session_id, t.segment_id, t.segment_count, t.participant_id, t.status,
+               ROW_NUMBER() OVER (ORDER BY f.position) AS position,
+               f.start_ms,
+               MAX(s.end_ms) AS end_ms,
+               STRING_AGG(s.lyrics, ' / ') WITHIN GROUP (ORDER BY s.position) AS lyrics
+        FROM turns t
+        JOIN song_segments f ON f.id = t.segment_id
+        JOIN song_segments s ON s.song_id = f.song_id
+                            AND s.position BETWEEN f.position AND f.position + t.segment_count - 1
         WHERE t.session_id = %s
-        ORDER BY s.position
+        GROUP BY t.id, t.session_id, t.segment_id, t.segment_count, t.participant_id, t.status,
+                 f.position, f.start_ms
+        ORDER BY f.position
         """,
         (session_id,),
     )

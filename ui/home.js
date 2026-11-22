@@ -20,7 +20,7 @@ document.getElementById("create-form").addEventListener("submit", async (event) 
         host_name: document.getElementById("host-name").value,
       }),
     });
-    // The host is the first participant: remember it so this browser can claim turns.
+    // The host is the first participant: remember it so this browser can start the session.
     rememberParticipant(session.id, session.participants[0].id);
     window.location.href = `/session.html?id=${encodeURIComponent(session.id)}`;
   } catch (error) {

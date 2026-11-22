@@ -111,12 +111,14 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/HTTPValidationError'
-  /api/sessions/{session_id}/turns/{turn_id}/claim:
+  /api/sessions/{session_id}/start:
     post:
       tags:
       - sessions
-      summary: Claim Turn
-      operationId: claim_turn_api_sessions__session_id__turns__turn_id__claim_post
+      summary: Start Session
+      description: 'The host deals the song''s lines to everyone who has joined (body:
+        the host''s participant_id).'
+      operationId: start_session_api_sessions__session_id__start_post
       parameters:
       - name: session_id
         in: path
@@ -124,18 +126,12 @@ paths:
         schema:
           type: string
           title: Session Id
-      - name: turn_id
-        in: path
-        required: true
-        schema:
-          type: integer
-          title: Turn Id
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/ClaimBody'
+              $ref: '#/components/schemas/StartBody'
       responses:
         '200':
           description: Successful Response
@@ -225,15 +221,6 @@ paths:
                 $ref: '#/components/schemas/HTTPValidationError'
 components:
   schemas:
-    ClaimBody:
-      properties:
-        participant_id:
-          type: integer
-          title: Participant Id
-      type: object
-      required:
-      - participant_id
-      title: ClaimBody
     CreateSessionBody:
       properties:
         song_id:
@@ -265,6 +252,15 @@ components:
       required:
       - display_name
       title: JoinBody
+    StartBody:
+      properties:
+        participant_id:
+          type: integer
+          title: Participant Id
+      type: object
+      required:
+      - participant_id
+      title: StartBody
     ValidationError:
       properties:
         loc:
