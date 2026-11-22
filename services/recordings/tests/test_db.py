@@ -1,8 +1,10 @@
-from urllib.parse import quote
+import uuid
+from urllib.parse import quote, urlparse
 
 import pytest
 
 from recordings import db
+from recordings import repository as repo
 
 
 def test_parse_url_reads_every_part_of_the_database_url():
@@ -58,7 +60,43 @@ def test_migrate_applies_each_migration_once(conn):
     assert db.migrate(conn) == []  # the fixture already migrated this database
     cur = conn.cursor()
     cur.execute("SELECT version FROM schema_migrations")
-    assert [row["version"] for row in cur.fetchall()] == ["V001__create_recordings_table"]
+    assert [row["version"] for row in cur.fetchall()] == [
+        "V001__create_recordings_table",
+        "V002__store_clip_audio_in_database",
+    ]
+
+
+def test_v002_keeps_the_rows_that_existed_before_it(test_database_url, tmp_path, monkeypatch):
+    """V002 alters a table that already holds data on Azure: old rows must survive it."""
+    name = f"test_v002_{uuid.uuid4().hex[:8]}"
+    admin = db.connect(test_database_url)
+    admin.autocommit(True)
+    admin.cursor().execute(f"CREATE DATABASE {name}")
+    try:
+        conn = db.connect(urlparse(test_database_url)._replace(path=f"/{name}").geturl())
+        # 1. The database as it was before V002, with one recording saved the old way
+        only_v001 = tmp_path / "migrations"
+        only_v001.mkdir()
+        (only_v001 / "V001__create_recordings_table.sql").write_text(
+            (db.MIGRATIONS_DIR / "V001__create_recordings_table.sql").read_text()
+        )
+        monkeypatch.setattr(db, "MIGRATIONS_DIR", only_v001)
+        assert db.migrate(conn) == ["V001__create_recordings_table"]
+        with db.transaction(conn):
+            conn.cursor().execute(
+                "INSERT INTO recordings (turn_id, session_id, file_name, content_type, size_bytes, created_at)"
+                " VALUES (1, 'abc123', 'abc123_1.webm', 'audio/webm', 4000, SYSUTCDATETIME())"
+            )
+        # 2. Deploy the new version: only V002 runs, and the old row is still there, without audio
+        monkeypatch.undo()
+        assert db.migrate(conn) == ["V002__store_clip_audio_in_database"]
+        old = repo.get_by_turn(conn, 1)
+        assert (old["file_name"], old["size_bytes"], old["has_audio"]) == ("abc123_1.webm", 4000, False)
+        conn.close()
+    finally:
+        admin.cursor().execute(f"ALTER DATABASE {name} SET SINGLE_USER WITH ROLLBACK IMMEDIATE")
+        admin.cursor().execute(f"DROP DATABASE {name}")
+        admin.close()
 
 
 def test_transaction_rolls_back_when_the_block_fails(conn):

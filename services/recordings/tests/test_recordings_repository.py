@@ -10,7 +10,7 @@ from recordings import repository as repo
 
 def _insert(conn, turn_id, session_id="abc123"):
     return repo.insert_recording(
-        conn, turn_id, session_id, f"{turn_id}.webm", "audio/webm", 1024, datetime(2026, 10, 11, 10, 0)
+        conn, turn_id, session_id, f"{turn_id}.webm", "audio/webm", datetime(2026, 10, 11, 10, 0), b"x" * 1024
     )
 
 
@@ -19,7 +19,15 @@ def test_recording_is_found_by_turn(conn):
     recording = repo.get_by_turn(conn, 7)
     assert recording["id"] == recording_id
     assert recording["file_name"] == "7.webm"
+    assert (recording["size_bytes"], recording["has_audio"]) == (1024, True)
+    assert "audio" not in recording  # the bytes are only read when a clip is played
     assert repo.get_by_turn(conn, 8) is None
+
+
+def test_audio_is_stored_and_read_back_byte_for_byte(conn):
+    recording_id = _insert(conn, turn_id=7)
+    assert repo.get_audio(conn, recording_id) == {"content_type": "audio/webm", "audio": b"x" * 1024}
+    assert repo.get_audio(conn, 999) is None
 
 
 def test_only_one_recording_per_turn(conn):

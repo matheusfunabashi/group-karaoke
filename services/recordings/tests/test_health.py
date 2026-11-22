@@ -6,7 +6,7 @@ def test_health_reports_the_database_and_its_schema_version(client):
     assert response.status_code == 200
     body = response.json()
     assert (body["status"], body["service"], body["version"]) == ("ok", "recordings", "dev")
-    assert body["database"] == {"status": "ok", "schema_version": "V001__create_recordings_table"}
+    assert body["database"] == {"status": "ok", "schema_version": "V002__store_clip_audio_in_database"}
 
 
 def test_health_is_503_when_the_database_is_unreachable(client, monkeypatch):

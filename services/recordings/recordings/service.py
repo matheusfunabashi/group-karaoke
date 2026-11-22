@@ -1,6 +1,5 @@
 """Business logic for the recordings domain. No HTTP here, so it can be unit-tested directly."""
 from datetime import datetime, timezone
-from pathlib import Path
 
 from recordings import repository as repo
 from recordings import sessions_client
@@ -24,6 +23,10 @@ class SessionNotFound(Exception):
     """No session with this id."""
 
 
+class ClipNotFound(Exception):
+    """No recording with this id, or it was saved before clips were stored in the database."""
+
+
 def validate_clip(content_type: str, size_bytes: int) -> str:
     """Check the upload and return the file extension to save it with.
 
@@ -39,30 +42,33 @@ def validate_clip(content_type: str, size_bytes: int) -> str:
     return ALLOWED_TYPES[base_type]
 
 
-def save_recording(conn, media_dir: Path, turn_id: int, content_type: str, data: bytes) -> dict:
-    """Validate a clip, write it to disk, record it, and mark the turn as recorded."""
+def save_recording(conn, turn_id: int, content_type: str, data: bytes) -> dict:
+    """Validate a clip, store it in the database, and mark the turn as recorded."""
     extension = validate_clip(content_type, len(data))
     turn = sessions_client.get_open_turn(turn_id)
     if turn is None or repo.get_by_turn(conn, turn_id) is not None:
         raise TurnNotOpen(f"Turn {turn_id} is not waiting for a recording")
 
-    # The file name is built only from our own ids, never from user input.
+    # The file name (used when the clip is downloaded) is built only from our own ids.
     file_name = f"{turn['session_id']}_{turn_id}{extension}"
-    path = media_dir / file_name
-    path.write_bytes(data)
-    try:
-        # The transaction commits the INSERT only if the block finishes, including the HTTP call
-        # that marks the turn recorded in the sessions service; if that call fails, it rolls back.
-        with transaction(conn):
-            repo.insert_recording(
-                conn, turn_id, turn["session_id"], file_name, content_type.split(";")[0].strip(),
-                len(data), datetime.now(timezone.utc).replace(tzinfo=None, microsecond=0),
-            )
-            sessions_client.mark_recorded(turn_id)
-    except Exception:
-        path.unlink(missing_ok=True)  # don't leave an orphan file behind
-        raise
+    # The transaction commits the INSERT only if the block finishes, including the HTTP call
+    # that marks the turn recorded in the sessions service; if that call fails, it rolls back,
+    # and with the clip inside the row there is no file left to clean up (ADR-7).
+    with transaction(conn):
+        repo.insert_recording(
+            conn, turn_id, turn["session_id"], file_name, content_type.split(";")[0].strip(),
+            datetime.now(timezone.utc).replace(tzinfo=None, microsecond=0), data,
+        )
+        sessions_client.mark_recorded(turn_id)
     return repo.get_by_turn(conn, turn_id)
+
+
+def get_audio(conn, recording_id: int) -> dict:
+    """The clip's bytes and type, for playback."""
+    audio = repo.get_audio(conn, recording_id)
+    if audio is None:
+        raise ClipNotFound(f"Recording {recording_id} has no audio")
+    return audio
 
 
 def get_finale(conn, session_id: str) -> dict:

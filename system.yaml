@@ -57,9 +57,6 @@ services:
       SESSIONS_URL:
         description: Base URL of the sessions service.
         default: http://localhost:8001
-      DATA_DIR:
-        description: Folder where uploaded clips are stored until they move into the database (ADR-7).
-        default: ./data
       CORS_ORIGINS:
         description: Comma-separated browser origins allowed to call the API (the UI's address).
         default: http://localhost:8080

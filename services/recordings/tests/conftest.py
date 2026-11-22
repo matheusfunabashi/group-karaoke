@@ -96,6 +96,6 @@ def fake_sessions(monkeypatch):
 
 
 @pytest.fixture
-def client(tmp_path, database_url, fake_sessions):
-    settings = Settings(port=0, database_url=database_url, sessions_url="http://unused", data_dir=tmp_path)
+def client(database_url, fake_sessions):
+    settings = Settings(port=0, database_url=database_url, sessions_url="http://unused")
     return TestClient(create_app(settings))
