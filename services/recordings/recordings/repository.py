@@ -17,9 +17,11 @@ def insert_recording(
         """
         INSERT INTO recordings (turn_id, session_id, file_name, content_type, size_bytes, created_at, audio)
         OUTPUT INSERTED.id
-        VALUES (%s, %s, %s, %s, %s, %s, %s)
+        VALUES (%s, %s, %s, %s, %s, %s, CONVERT(VARBINARY(MAX), %s, 2))
         """,
-        (turn_id, session_id, file_name, content_type, len(audio), created_at, audio),
+        # The audio goes as a hex string that SQL Server decodes (style 2 = hex without 0x):
+        # pymssql would send bytes that happen to look like text as a text value instead.
+        (turn_id, session_id, file_name, content_type, len(audio), created_at, audio.hex()),
     )
     return cur.fetchone()["id"]
 
