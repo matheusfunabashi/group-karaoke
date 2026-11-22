@@ -189,9 +189,12 @@ The Container Apps scale to zero and the databases pause after an hour without u
    the order people joined (host, second person, third, ... then the host again), so everyone sings
    the same number of short turns. If the lines don't divide evenly, a few neighbouring lines are
    merged into one turn. Nobody can join after the start.
-4. Each person presses **Record all my lines**. Wear headphones: the backing track plays, and the
-   microphone records only during your lines (it shows "Sing now" with the words). A single line
-   can be redone with its own **Record** button.
+4. Each person presses **Record all my lines**, which opens the karaoke screen (`record.html`).
+   Wear headphones and press **Start singing**: the backing track plays from just before your first
+   line, the current line is shown big and fills in from left to right as the music goes through
+   it (pink for your lines, white for other people's, with a countdown before yours), and the
+   microphone records only during your lines. When the song section is over, **Done** takes you
+   back. A single line can be sung again with its own **Record** button.
 5. Open **Listen to the finale** at any time; lines not sung yet stay silent.
 
 Recording uses the browser's `MediaRecorder` (Chrome, Firefox, Safari and Edge). Browsers only
