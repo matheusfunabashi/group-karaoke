@@ -107,18 +107,22 @@ form input, form select { flex: 1 1 180px; }
   body::after { animation: none; opacity: .4; }
 }
 
-/* Recording page: the karaoke screen. The current line is drawn twice on top of itself through a
-   gradient: the part already sung (up to --fill) is bright, the rest is faint. */
+/* Recording page: the karaoke screen. Each word of the current line is painted with a gradient:
+   the part already sung (up to its --fill) is bright, the rest is faint. */
 .karaoke #stage { text-align: center; padding: 24px 0; }
 .cue { font-size: 1.2rem; color: var(--muted); min-height: 1.8em; margin: 0; }
 .big-line {
-  --fill: 0%;
   --done: var(--fg);
   font-size: clamp(1.6rem, 5vw, 2.6rem);
   font-weight: 700;
   line-height: 1.3;
   min-height: 2.6em;
   margin: 12px 0;
+}
+.big-line span {
+  --fill: 0%;
+  display: inline-block; /* a word never breaks across rows, so its fill reads left to right */
+  margin: 0 .14em;
   background: linear-gradient(90deg, var(--done) var(--fill), rgba(255, 244, 232, .28) var(--fill));
   -webkit-background-clip: text;
   background-clip: text;
