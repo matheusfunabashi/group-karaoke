@@ -202,4 +202,6 @@ allow microphone access on `localhost` or HTTPS.
 
 Two songs are traditional, public-domain melodies whose backing tracks in `ui/audio/` are
 simple synthesized melodies made for this project. *Payphone* (Maroon 5) is copyrighted and is
-included only as a non-commercial class demo; it is not licensed for any other use.
+included only as a non-commercial class demo; it is not licensed for any other use. Its line timings
+come from LRCLIB (lrclib.net), a public database of synced lyrics: only the timestamps were taken and
+matched in order to the lines in `seed.json`.

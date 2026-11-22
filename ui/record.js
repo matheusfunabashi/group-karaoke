@@ -120,18 +120,31 @@ async function sing(session, lines, mine) {
   requestAnimationFrame(tick);
 }
 
-// The big line fills in from left to right over its duration (CSS reads --fill), so the
-// singer can see how far into the line the music is. My lines are pink, others' are white.
+// The big line fills in word by word, in reading order, over the line's duration, so the singer
+// can see how far into the line the music is (and a line that wraps onto two rows fills the
+// first row before the second). Each word is its own <span> with its own fill (CSS reads
+// --fill). My lines are pink, other people's are white.
 function showLine(line, next, now, mine) {
   const cue = document.getElementById("cue");
   const current = document.getElementById("current-line");
   const nextLine = document.getElementById("next-line");
   if (!line) return;
 
-  const fill = Math.min(1, Math.max(0, (now - line.start_ms) / (line.end_ms - line.start_ms)));
-  current.textContent = line.lyrics;
-  current.style.setProperty("--fill", `${fill * 100}%`);
-  current.classList.toggle("mine", line.isMine);
+  if (current.dataset.turn !== String(line.id)) {  // a new line: one span per word
+    current.dataset.turn = line.id;
+    current.replaceChildren(...line.lyrics.split(" ").map((word) => el("span", word)));
+    current.classList.toggle("mine", line.isMine);
+  }
+  // How many letters of the line the music has reached, then fill each word up to there
+  const words = [...current.children];
+  const letters = words.reduce((sum, word) => sum + word.textContent.length, 0);
+  const progress = Math.min(1, Math.max(0, (now - line.start_ms) / (line.end_ms - line.start_ms)));
+  let reached = progress * letters;
+  for (const word of words) {
+    const length = word.textContent.length;
+    word.style.setProperty("--fill", `${Math.min(1, Math.max(0, reached / length)) * 100}%`);
+    reached -= length;
+  }
 
   if (now < line.start_ms) {
     const seconds = Math.ceil((line.start_ms - now) / 1000);
