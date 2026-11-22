@@ -31,7 +31,7 @@ function play() {
 
   for (const item of finale.playlist) {
     if (!item.clip_url) continue;
-    const clip = new Audio(item.clip_url);
+    const clip = new Audio(serviceUrl(item.clip_url)); // clips are served by the recordings service
     clip.preload = "auto";
     // Start each clip when the backing track reaches that part (start_ms after we press Play).
     const timer = setTimeout(() => {

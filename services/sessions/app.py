@@ -1,12 +1,16 @@
 """Entry point of the sessions service: `python app.py` starts it."""
 import logging
+import time
 
 import uvicorn
-from fastapi import FastAPI, Response
+from fastapi import FastAPI, Request, Response
+from fastapi.middleware.cors import CORSMiddleware
 
 from sessions import db, service
 from sessions.config import Settings, load_settings
 from sessions.routes import router
+
+log = logging.getLogger("sessions.requests")
 
 
 def create_app(settings: Settings) -> FastAPI:
@@ -21,6 +25,28 @@ def create_app(settings: Settings) -> FastAPI:
 
     app = FastAPI(title="sessions")
     app.state.settings = settings
+
+    # CORS lives here, not in Container Apps ingress (guide step 5): the UI is on another
+    # origin, and its JSON POSTs send a Content-Type header that must be allowed.
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=list(settings.cors_origins),
+        allow_methods=["GET", "POST"],
+        allow_headers=["Content-Type"],
+    )
+
+    @app.middleware("http")
+    async def log_request(request: Request, call_next):
+        """One log line per request: method, path, status and how long it took."""
+        start = time.perf_counter()
+        status = 500
+        try:
+            response = await call_next(request)
+            status = response.status_code
+            return response
+        finally:
+            elapsed_ms = (time.perf_counter() - start) * 1000
+            log.info("%s %s -> %d in %.0f ms", request.method, request.url.path, status, elapsed_ms)
 
     @app.get("/health")
     def health(response: Response) -> dict:
@@ -41,5 +67,6 @@ def create_app(settings: Settings) -> FastAPI:
 if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s %(message)s")
     settings = load_settings()
-    # 0.0.0.0 so the service is reachable from outside its container
-    uvicorn.run(create_app(settings), host="0.0.0.0", port=settings.port)
+    # 0.0.0.0 so the service is reachable from outside its container; access_log=False
+    # because log_request above already writes one line per request
+    uvicorn.run(create_app(settings), host="0.0.0.0", port=settings.port, access_log=False)
