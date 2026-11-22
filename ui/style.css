@@ -95,6 +95,8 @@ form input, form select { flex: 1 1 180px; }
 .turn > div { min-width: 0; overflow-wrap: anywhere; }
 .turn button { flex-shrink: 0; }
 .lyrics { font-style: italic; }
+.turn.singing { font-weight: bold; }
+#now-singing { min-height: 1.5em; }
 .error { color: #ffb1af; }
 .share { word-break: break-all; }
 

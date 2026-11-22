@@ -30,7 +30,7 @@ Browser ── ui/ (Azure Storage static website)
 | sessions | POST | `/api/sessions` | Create a session (`song_id`, `host_name`) |
 | sessions | GET | `/api/sessions/{id}` | Session with song, participants and turns |
 | sessions | POST | `/api/sessions/{id}/participants` | Join (`display_name`) |
-| sessions | POST | `/api/sessions/{id}/turns/{turn_id}/claim` | Claim a segment (`participant_id`) |
+| sessions | POST | `/api/sessions/{id}/start` | Host only (`participant_id`): deal the song's lines to the singers in rotation |
 | sessions | GET | `/api/sessions/turns/{turn_id}/open` | *For recordings:* is this turn waiting for a clip? |
 | sessions | POST | `/api/sessions/turns/{turn_id}/recorded` | *For recordings:* mark the turn recorded |
 | sessions | GET | `/api/sessions/{id}/timeline` | *For recordings:* the turns' timing for the finale |
@@ -70,6 +70,7 @@ Each service has versioned SQL files in `services/<service>/migrations/` (ADR-8)
 | Service | Migration | What it does |
 |---|---|---|
 | sessions | `V001__create_sessions_tables.sql` | `songs`, `song_segments`, `sessions`, `participants`, `turns` |
+| sessions | `V002__deal_lines_to_players.sql` | `songs.retired` and `turns.segment_count`, on tables already holding data: one line per turn, dealt in rotation |
 | recordings | `V001__create_recordings_table.sql` | `recordings` (clip details; the clip itself was on disk) |
 | recordings | `V002__store_clip_audio_in_database.sql` | `ALTER TABLE recordings ADD audio VARBINARY(MAX) NULL` on a table that already held data |
 
@@ -184,10 +185,14 @@ The Container Apps scale to zero and the databases pause after an hour without u
 ## How to use it
 1. Open the UI, pick a song, type your name and press **Create**.
 2. Copy the **Invite people** link and send it to friends; they open it and **Join** with a name.
-3. Everyone presses **Sing this** on a free part, then **Record** on their own part. Wear headphones:
-   the backing track plays while you record, and the microphone should only pick up your voice.
-   Recording stops by itself at the end of your part.
-4. Open **Listen to the finale** at any time; parts not sung yet stay silent.
+3. When everyone has joined, the host presses **Start**. The song's lines are dealt one each, in
+   the order people joined (host, second person, third, ... then the host again), so everyone sings
+   the same number of short turns. If the lines don't divide evenly, a few neighbouring lines are
+   merged into one turn. Nobody can join after the start.
+4. Each person presses **Record all my lines**. Wear headphones: the backing track plays, and the
+   microphone records only during your lines (it shows "Sing now" with the words). A single line
+   can be redone with its own **Record** button.
+5. Open **Listen to the finale** at any time; lines not sung yet stay silent.
 
 Recording uses the browser's `MediaRecorder` (Chrome, Firefox, Safari and Edge). Browsers only
 allow microphone access on `localhost` or HTTPS.

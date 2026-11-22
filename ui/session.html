@@ -25,9 +25,18 @@
       </form>
     </div>
 
-    <div class="card">
-      <h2>Parts</h2>
-      <p class="muted">Use headphones when recording, so the backing track isn't recorded too.</p>
+    <div class="card" id="lobby-card" hidden>
+      <h2>Waiting to start</h2>
+      <p id="lobby-text" class="muted"></p>
+      <button id="start-button" hidden>Start</button>
+    </div>
+
+    <div class="card" id="lines-card" hidden>
+      <h2>Lines</h2>
+      <p class="muted">Everyone sings one line, then the next person takes over. Use headphones when
+        recording, so the backing track isn't recorded too.</p>
+      <p><button id="record-all" hidden>Record all my lines</button></p>
+      <p id="now-singing" class="lyrics"></p>
       <div id="turns"></div>
     </div>
 

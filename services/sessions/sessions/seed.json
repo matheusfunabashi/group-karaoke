@@ -64,43 +64,313 @@
       "segments": [
         {
           "start_ms": 0,
+          "end_ms": 5500,
+          "lyrics": "I'm at a payphone, trying to call home"
+        },
+        {
+          "start_ms": 5500,
+          "end_ms": 11000,
+          "lyrics": "All of my change, I spent on you"
+        },
+        {
+          "start_ms": 11000,
+          "end_ms": 16500,
+          "lyrics": "Where have the times gone? Baby, it's all wrong"
+        },
+        {
+          "start_ms": 16500,
           "end_ms": 22000,
-          "lyrics": "I'm at a payphone, trying to call home / All of my change, I spent on you / Where have the times gone? Baby, it's all wrong / Where are the plans we made for two?"
+          "lyrics": "Where are the plans we made for two?"
         },
         {
           "start_ms": 22000,
+          "end_ms": 26750,
+          "lyrics": "Yeah, I, I know it's hard to remember the people we used to be"
+        },
+        {
+          "start_ms": 26750,
+          "end_ms": 31500,
+          "lyrics": "It's even harder to picture that you're not here next to me"
+        },
+        {
+          "start_ms": 31500,
+          "end_ms": 36250,
+          "lyrics": "You say it's too late to make it, but is it too late to try?"
+        },
+        {
+          "start_ms": 36250,
+          "end_ms": 41000,
+          "lyrics": "And in our time that you wasted, all of our bridges burned down"
+        },
+        {
+          "start_ms": 41000,
+          "end_ms": 45750,
+          "lyrics": "I've wasted my nights, you turned out the lights"
+        },
+        {
+          "start_ms": 45750,
+          "end_ms": 50500,
+          "lyrics": "Now I'm paralyzed"
+        },
+        {
+          "start_ms": 50500,
+          "end_ms": 55250,
+          "lyrics": "Still stuck in that time when we called it love"
+        },
+        {
+          "start_ms": 55250,
           "end_ms": 60000,
-          "lyrics": "Yeah, I, I know it's hard to remember the people we used to be / It's even harder to picture that you're not here next to me / You say it's too late to make it, but is it too late to try? / And in our time that you wasted, all of our bridges burned down / I've wasted my nights, you turned out the lights / Now I'm paralyzed / Still stuck in that time when we called it love / But even the sun sets in paradise"
+          "lyrics": "But even the sun sets in paradise"
         },
         {
           "start_ms": 60000,
+          "end_ms": 62750,
+          "lyrics": "I'm at a payphone, trying to call home"
+        },
+        {
+          "start_ms": 62750,
+          "end_ms": 65500,
+          "lyrics": "All of my change, I spent on you"
+        },
+        {
+          "start_ms": 65500,
+          "end_ms": 68250,
+          "lyrics": "Where have the times gone? Baby, it's all wrong"
+        },
+        {
+          "start_ms": 68250,
+          "end_ms": 71000,
+          "lyrics": "Where are the plans we made for two?"
+        },
+        {
+          "start_ms": 71000,
+          "end_ms": 73750,
+          "lyrics": "If happy-ever-afters did exist"
+        },
+        {
+          "start_ms": 73750,
+          "end_ms": 76500,
+          "lyrics": "I would still be holding you like this"
+        },
+        {
+          "start_ms": 76500,
+          "end_ms": 79250,
+          "lyrics": "All those fairy tales are full of shit"
+        },
+        {
+          "start_ms": 79250,
           "end_ms": 82000,
-          "lyrics": "I'm at a payphone, trying to call home / All of my change, I spent on you / Where have the times gone? Baby, it's all wrong / Where are the plans we made for two? / If happy-ever-afters did exist / I would still be holding you like this / All those fairy tales are full of shit / One more fucking love song, I'll be sick, oh"
+          "lyrics": "One more fucking love song, I'll be sick, oh"
         },
         {
           "start_ms": 82000,
+          "end_ms": 86750,
+          "lyrics": "You turned your back on tomorrow 'cause you forgot yesterday"
+        },
+        {
+          "start_ms": 86750,
+          "end_ms": 91500,
+          "lyrics": "I gave you my love to borrow, but you just gave it away"
+        },
+        {
+          "start_ms": 91500,
+          "end_ms": 96250,
+          "lyrics": "You can't expect me to be fine (oh), I don't expect you to care (yeah)"
+        },
+        {
+          "start_ms": 96250,
+          "end_ms": 101000,
+          "lyrics": "I know I said it before, but all of our bridges burned down"
+        },
+        {
+          "start_ms": 101000,
+          "end_ms": 105750,
+          "lyrics": "I've wasted my nights, you turned out the lights"
+        },
+        {
+          "start_ms": 105750,
+          "end_ms": 110500,
+          "lyrics": "Now I'm paralyzed (oh)"
+        },
+        {
+          "start_ms": 110500,
+          "end_ms": 115250,
+          "lyrics": "Still stuck in that time when we called it love"
+        },
+        {
+          "start_ms": 115250,
           "end_ms": 120000,
-          "lyrics": "You turned your back on tomorrow 'cause you forgot yesterday / I gave you my love to borrow, but you just gave it away / You can't expect me to be fine (oh), I don't expect you to care (yeah) / I know I said it before, but all of our bridges burned down / I've wasted my nights, you turned out the lights / Now I'm paralyzed (oh) / Still stuck in that time when we called it love / But even the sun sets in paradise"
+          "lyrics": "But even the sun sets in paradise"
         },
         {
           "start_ms": 120000,
+          "end_ms": 122666,
+          "lyrics": "I'm at a payphone, trying to call home"
+        },
+        {
+          "start_ms": 122666,
+          "end_ms": 125333,
+          "lyrics": "All of my change, I spent on you (oh-oh)"
+        },
+        {
+          "start_ms": 125333,
+          "end_ms": 128000,
+          "lyrics": "Where have the times gone? Baby, it's all wrong"
+        },
+        {
+          "start_ms": 128000,
+          "end_ms": 130666,
+          "lyrics": "Where are the plans we made for two? (Yeah)"
+        },
+        {
+          "start_ms": 130666,
+          "end_ms": 133333,
+          "lyrics": "If happy-ever-afters did exist"
+        },
+        {
+          "start_ms": 133333,
+          "end_ms": 136000,
+          "lyrics": "I would still be holding you like this"
+        },
+        {
+          "start_ms": 136000,
+          "end_ms": 138666,
+          "lyrics": "And all those fairy tales are full of shit"
+        },
+        {
+          "start_ms": 138666,
+          "end_ms": 141333,
+          "lyrics": "One more fucking love song, I'll be sick (uh)"
+        },
+        {
+          "start_ms": 141333,
           "end_ms": 144000,
-          "lyrics": "I'm at a payphone, trying to call home / All of my change, I spent on you (oh-oh) / Where have the times gone? Baby, it's all wrong / Where are the plans we made for two? (Yeah) / If happy-ever-afters did exist / I would still be holding you like this / And all those fairy tales are full of shit / One more fucking love song, I'll be sick (uh) / Now I'm at a payphone"
+          "lyrics": "Now I'm at a payphone"
         },
         {
           "start_ms": 144000,
+          "end_ms": 146875,
+          "lyrics": "Man, fuck that shit"
+        },
+        {
+          "start_ms": 146875,
+          "end_ms": 149750,
+          "lyrics": "I be out spendin' all this money while you sittin' 'round"
+        },
+        {
+          "start_ms": 149750,
+          "end_ms": 152625,
+          "lyrics": "Wondering why it wasn't you who came up from nothin'"
+        },
+        {
+          "start_ms": 152625,
+          "end_ms": 155500,
+          "lyrics": "Made it from the bottom, now when you see me, I'm stuntin'"
+        },
+        {
+          "start_ms": 155500,
+          "end_ms": 158375,
+          "lyrics": "And all of my cars start with the push of a button"
+        },
+        {
+          "start_ms": 158375,
+          "end_ms": 161250,
+          "lyrics": "Telling me I changed since I blew up, or whatever you call it"
+        },
+        {
+          "start_ms": 161250,
+          "end_ms": 164125,
+          "lyrics": "Switched the number to my phone, so you never could call it"
+        },
+        {
+          "start_ms": 164125,
           "end_ms": 167000,
-          "lyrics": "Man, fuck that shit / I be out spendin' all this money while you sittin' 'round / Wondering why it wasn't you who came up from nothin' / Made it from the bottom, now when you see me, I'm stuntin' / And all of my cars start with the push of a button / Telling me I changed since I blew up, or whatever you call it / Switched the number to my phone, so you never could call it / Don't need my name on my shirt, you can tell that I'm ballin'"
+          "lyrics": "Don't need my name on my shirt, you can tell that I'm ballin'"
         },
         {
           "start_ms": 167000,
+          "end_ms": 169875,
+          "lyrics": "Swish, what a shame, coulda got picked"
+        },
+        {
+          "start_ms": 169875,
+          "end_ms": 172750,
+          "lyrics": "Had a really good game, but you missed your last shot"
+        },
+        {
+          "start_ms": 172750,
+          "end_ms": 175625,
+          "lyrics": "So you talk about who you see at the top"
+        },
+        {
+          "start_ms": 175625,
+          "end_ms": 178500,
+          "lyrics": "Or what you could've saw, but sad to say, it's over for"
+        },
+        {
+          "start_ms": 178500,
+          "end_ms": 181375,
+          "lyrics": "Phantom pulled up, valet opened doors"
+        },
+        {
+          "start_ms": 181375,
+          "end_ms": 184250,
+          "lyrics": "Wished I'd go away, got what you was looking for"
+        },
+        {
+          "start_ms": 184250,
+          "end_ms": 187125,
+          "lyrics": "Now it's me who they want"
+        },
+        {
+          "start_ms": 187125,
           "end_ms": 190000,
-          "lyrics": "Swish, what a shame, coulda got picked / Had a really good game, but you missed your last shot / So you talk about who you see at the top / Or what you could've saw, but sad to say, it's over for / Phantom pulled up, valet opened doors / Wished I'd go away, got what you was looking for / Now it's me who they want / So you can go and take that little piece of shit with you (yeah)"
+          "lyrics": "So you can go and take that little piece of shit with you (yeah)"
         },
         {
           "start_ms": 190000,
+          "end_ms": 194666,
+          "lyrics": "I'm at a payphone, trying to call home"
+        },
+        {
+          "start_ms": 194666,
+          "end_ms": 199333,
+          "lyrics": "All of my change, I spent on you (whoo!)"
+        },
+        {
+          "start_ms": 199333,
+          "end_ms": 204000,
+          "lyrics": "Where have the times gone? Baby, it's all wrong (yeah)"
+        },
+        {
+          "start_ms": 204000,
+          "end_ms": 208666,
+          "lyrics": "Where are the plans we made for two? (Whoo!)"
+        },
+        {
+          "start_ms": 208666,
+          "end_ms": 213333,
+          "lyrics": "If happy-ever-afters did exist (oh, yeah)"
+        },
+        {
+          "start_ms": 213333,
+          "end_ms": 218000,
+          "lyrics": "I would still be holding you like this"
+        },
+        {
+          "start_ms": 218000,
+          "end_ms": 222666,
+          "lyrics": "And all these fairy tales are full of shit (yeah)"
+        },
+        {
+          "start_ms": 222666,
+          "end_ms": 227333,
+          "lyrics": "One more fucking love song, I'll be sick"
+        },
+        {
+          "start_ms": 227333,
           "end_ms": 232000,
-          "lyrics": "I'm at a payphone, trying to call home / All of my change, I spent on you (whoo!) / Where have the times gone? Baby, it's all wrong (yeah) / Where are the plans we made for two? (Whoo!) / If happy-ever-afters did exist (oh, yeah) / I would still be holding you like this / And all these fairy tales are full of shit (yeah) / One more fucking love song, I'll be sick / Yeah, now I'm at a payphone"
+          "lyrics": "Yeah, now I'm at a payphone"
         }
       ]
     }

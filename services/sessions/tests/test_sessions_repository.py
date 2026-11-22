@@ -60,3 +60,19 @@ def test_turn_must_point_at_a_real_session(conn, song_id):
     segment_id = repo.list_segments(conn, song_id)[0]["id"]
     with pytest.raises(pymssql.IntegrityError):
         repo.insert_turn(conn, "no-such-session", segment_id)
+
+
+def test_a_turn_can_cover_several_neighbouring_lines(conn, song_id):
+    repo.insert_session(conn, "abc123", song_id, "Ana", datetime(2026, 10, 8, 10, 0))
+    first = repo.list_segments(conn, song_id)[0]["id"]
+    repo.insert_turn(conn, "abc123", first, segment_count=2, status="assigned")
+
+    (turn,) = repo.list_turns(conn, "abc123")
+    assert (turn["position"], turn["start_ms"], turn["end_ms"]) == (1, 0, 20000)
+    assert turn["lyrics"] == "Row row row / Merrily merrily"
+
+
+def test_retired_songs_leave_the_catalog_but_can_still_be_read(conn, song_id):
+    repo.retire_song(conn, song_id)
+    assert repo.list_songs(conn) == []
+    assert repo.get_song(conn, song_id)["retired"] is True
