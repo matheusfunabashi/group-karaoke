@@ -20,15 +20,20 @@ def test_each_item_keeps_its_timing():
 
 def test_recorded_turns_get_a_clip_url_and_missing_ones_get_none():
     recordings = [
-        {"turn_id": 13, "file_name": "abc_13.webm"},
-        {"turn_id": 11, "file_name": "abc_11.m4a"},
+        {"id": 2, "turn_id": 13, "has_audio": True},
+        {"id": 1, "turn_id": 11, "has_audio": True},
     ]
     playlist = build_finale(TURNS, recordings)
     assert [item["clip_url"] for item in playlist] == [
-        "/media/abc_11.m4a",
+        "/api/recordings/1/audio",
         None,
-        "/media/abc_13.webm",
+        "/api/recordings/2/audio",
     ]
+
+
+def test_recordings_saved_before_v002_have_no_audio_and_no_clip_url():
+    playlist = build_finale(TURNS, [{"id": 1, "turn_id": 11, "has_audio": False}])
+    assert playlist[0]["clip_url"] is None
 
 
 def test_output_has_exactly_these_keys():

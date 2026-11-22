@@ -13,8 +13,10 @@ def test_uploaded_clip_is_saved_and_served(client):
     response = _upload(client, 1)
     assert response.status_code == 201
 
-    file_name = response.json()["file_name"]
-    assert client.get(f"/media/{file_name}").content == CLIP
+    audio = client.get(f"/api/recordings/{response.json()['id']}/audio")
+    assert audio.content == CLIP
+    assert audio.headers["content-type"] == "audio/webm"
+    assert client.get("/api/recordings/999/audio").status_code == 404
 
 
 def test_upload_errors_become_http_status_codes(client):
@@ -31,7 +33,7 @@ def test_finale_endpoint_returns_playlist_over_http(client):
 
     finale = client.get("/api/recordings/sessions/abc123/finale")
     assert finale.status_code == 200
-    assert finale.json()["playlist"][0]["clip_url"] == "/media/abc123_1.webm"
+    assert finale.json()["playlist"][0]["clip_url"].endswith("/audio")
     assert client.get("/api/recordings/sessions/nope/finale").status_code == 404
 
 

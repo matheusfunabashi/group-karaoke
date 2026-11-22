@@ -57,7 +57,7 @@ jobs:
                              CORS_ORIGINS="$UI_URL" PORT=8000 "$@"
           }
           deploy sessions "$SESSIONS_DB_PASSWORD"
-          deploy recordings "$RECORDINGS_DB_PASSWORD" SESSIONS_URL="$SESSIONS_URL" DATA_DIR=/tmp/recordings-data
+          deploy recordings "$RECORDINGS_DB_PASSWORD" SESSIONS_URL="$SESSIONS_URL"
 
       - name: Deploy the UI
         run: |

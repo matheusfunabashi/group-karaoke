@@ -5,7 +5,6 @@ import time
 import uvicorn
 from fastapi import FastAPI, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.staticfiles import StaticFiles
 
 from recordings import db, sessions_client
 from recordings.config import Settings, load_settings
@@ -22,7 +21,6 @@ def create_app(settings: Settings) -> FastAPI:
         db.migrate(conn)
     finally:
         conn.close()
-    settings.media_dir.mkdir(parents=True, exist_ok=True)
     sessions_client.BASE_URL = settings.sessions_url
 
     app = FastAPI(title="recordings")
@@ -63,8 +61,6 @@ def create_app(settings: Settings) -> FastAPI:
         }
 
     app.include_router(router, prefix="/api/recordings", tags=["recordings"])
-    # Saved clips are served at /media/<file_name> (until they move into the database, ADR-7)
-    app.mount("/media", StaticFiles(directory=settings.media_dir), name="media")
     return app
 
 
