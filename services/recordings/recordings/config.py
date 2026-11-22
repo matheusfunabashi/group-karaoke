@@ -11,6 +11,8 @@ class Settings:
     sessions_url: str
     data_dir: Path  # clips are still saved on disk here until they move into the database (ADR-7)
     version: str = "dev"  # shown by /health; CD sets it to the git commit SHA
+    # Browser origins allowed to call this API (CORS): the UI's address
+    cors_origins: tuple[str, ...] = ("http://localhost:8080",)
 
     @property
     def media_dir(self) -> Path:
@@ -27,4 +29,9 @@ def load_settings() -> Settings:
         sessions_url=os.environ.get("SESSIONS_URL", "http://localhost:8001"),
         data_dir=Path(os.environ.get("DATA_DIR", "./data")),
         version=os.environ.get("APP_VERSION", "dev"),
+        cors_origins=tuple(
+            origin.strip().rstrip("/")
+            for origin in os.environ.get("CORS_ORIGINS", "http://localhost:8080").split(",")
+            if origin.strip()
+        ),
     )

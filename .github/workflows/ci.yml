@@ -1,0 +1,85 @@
+name: ci
+
+# Runs on every push except to main (cd.yml calls this workflow for main, so it doesn't
+# run twice) and on pull requests. Images are pushed to GHCR only when called for main.
+on:
+  push:
+    branches-ignore: [main]
+  pull_request:
+  workflow_call:
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install ruff==0.14.5
+      - run: ruff check services
+
+  validate:
+    name: validate system.yaml and OpenAPI
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install check-jsonschema openapi-spec-validator
+      - run: check-jsonschema --schemafile system.schema.json system.yaml
+      - run: openapi-spec-validator services/sessions/openapi.yaml services/recordings/openapi.yaml
+
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        service: [sessions, recordings]
+    steps:
+      - uses: actions/checkout@v4
+
+      # A throwaway SQL Server for the tests (ADR-4: real database, no mocks). Its password
+      # is generated here for this run only, so no password is written in the repository.
+      - name: Start SQL Server
+        run: |
+          PASSWORD="Aa1$(openssl rand -hex 16)"
+          echo "::add-mask::$PASSWORD"
+          docker run -d --name mssql -e ACCEPT_EULA=Y -e MSSQL_SA_PASSWORD="$PASSWORD" -p 1433:1433 \
+            mcr.microsoft.com/mssql/server:2022-latest
+          echo "TEST_DATABASE_URL=mssql+pymssql://sa:${PASSWORD}@localhost:1433/master" >> "$GITHUB_ENV"
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -r services/${{ matrix.service }}/requirements-dev.txt
+
+      - name: Tests with coverage (at least 70%)
+        working-directory: services/${{ matrix.service }}
+        run: pytest --cov=${{ matrix.service }} --cov=app --cov-report=term-missing --cov-fail-under=70
+
+  images:
+    needs: [lint, validate, test]
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        service: [sessions, recordings]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/login-action@v3
+        if: github.ref == 'refs/heads/main'
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Build (and on main, push) the image tagged with the commit SHA
+        uses: docker/build-push-action@v6
+        with:
+          context: services/${{ matrix.service }}
+          push: ${{ github.ref == 'refs/heads/main' }}
+          provenance: false   # otherwise Azure can't pull the image from GHCR
+          tags: ghcr.io/${{ github.repository_owner }}/group-karaoke-${{ matrix.service }}:${{ github.sha }}

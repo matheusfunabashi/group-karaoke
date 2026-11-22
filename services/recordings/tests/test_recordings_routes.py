@@ -33,3 +33,18 @@ def test_finale_endpoint_returns_playlist_over_http(client):
     assert finale.status_code == 200
     assert finale.json()["playlist"][0]["clip_url"] == "/media/abc123_1.webm"
     assert client.get("/api/recordings/sessions/nope/finale").status_code == 404
+
+
+def test_sessions_service_down_gives_503_and_saves_nothing(client, monkeypatch):
+    from recordings import sessions_client
+
+    def down(*args):
+        raise sessions_client.SessionsUnavailable("The sessions service is not answering")
+
+    monkeypatch.setattr(sessions_client, "mark_recorded", down)
+    response = _upload(client, 1)
+    assert response.status_code == 503
+    assert "not saved" in response.json()["detail"]
+
+    monkeypatch.setattr(sessions_client, "get_timeline", down)
+    assert client.get("/api/recordings/sessions/abc123/finale").status_code == 503

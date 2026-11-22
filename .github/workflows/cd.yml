@@ -1,0 +1,89 @@
+name: cd
+
+# On every push to main: run CI (which pushes the SHA-tagged images), then deploy both
+# services and the UI to Azure and wait until both services report healthy.
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+  packages: write
+  id-token: write   # lets azure/login sign in as the managed identity through OIDC
+
+jobs:
+  ci:
+    uses: ./.github/workflows/ci.yml
+
+  deploy:
+    needs: ci
+    runs-on: ubuntu-latest
+    env:
+      PREFIX: ${{ vars.PREFIX }}
+      RG: ${{ vars.RESOURCE_GROUP }}
+      UI_STORAGE: ${{ vars.UI_STORAGE }}
+      IMAGE_BASE: ghcr.io/${{ github.repository_owner }}/group-karaoke
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Look up the addresses
+        run: |
+          UI_URL=$(az storage account show -n "$UI_STORAGE" -g "$RG" --query primaryEndpoints.web -o tsv)
+          echo "UI_URL=${UI_URL%/}" >> "$GITHUB_ENV"
+          for svc in sessions recordings; do
+            FQDN=$(az containerapp show -n "$PREFIX-$svc" -g "$RG" --query properties.configuration.ingress.fqdn -o tsv)
+            echo "$(echo "$svc" | tr a-z A-Z)_URL=https://$FQDN" >> "$GITHUB_ENV"
+          done
+
+      - name: Deploy the services
+        env:
+          SESSIONS_DB_PASSWORD: ${{ secrets.SESSIONS_DB_PASSWORD }}
+          RECORDINGS_DB_PASSWORD: ${{ secrets.RECORDINGS_DB_PASSWORD }}
+        run: |
+          deploy() {
+            svc=$1; password=$2; shift 2
+            # The connection string is a Container Apps secret; the app reads it through secretref
+            az containerapp secret set -n "$PREFIX-$svc" -g "$RG" -o none --secrets \
+              "database-url=mssql+pymssql://${svc}_user:${password}@${PREFIX}-sql.database.windows.net:1433/${PREFIX}-${svc}-db?encryption=require"
+            az containerapp update -n "$PREFIX-$svc" -g "$RG" -o none \
+              --image "$IMAGE_BASE-$svc:$GITHUB_SHA" \
+              --set-env-vars DATABASE_URL=secretref:database-url APP_VERSION="$GITHUB_SHA" \
+                             CORS_ORIGINS="$UI_URL" PORT=8000 "$@"
+          }
+          deploy sessions "$SESSIONS_DB_PASSWORD"
+          deploy recordings "$RECORDINGS_DB_PASSWORD" SESSIONS_URL="$SESSIONS_URL" DATA_DIR=/tmp/recordings-data
+
+      - name: Deploy the UI
+        run: |
+          cat > ui/config.js <<CONFIG
+          // Written by the CD workflow: the services' addresses on Azure.
+          window.KARAOKE_CONFIG = {
+            sessionsUrl: "$SESSIONS_URL",
+            recordingsUrl: "$RECORDINGS_URL",
+          };
+          CONFIG
+          az storage blob upload-batch --account-name "$UI_STORAGE" --auth-mode key \
+            --destination '$web' --source ui --overwrite -o none
+
+      - name: Wait until both services are healthy and run this commit
+        run: |
+          for url in "$SESSIONS_URL" "$RECORDINGS_URL"; do
+            for attempt in $(seq 1 30); do   # up to ~5 minutes: cold start + database resume
+              body=$(curl -fsS --max-time 60 "$url/health" || true)
+              if echo "$body" | grep -q "\"version\":\"$GITHUB_SHA\"" && echo "$body" | grep -q '"database":{"status":"ok"'; then
+                echo "$url healthy: $body"
+                continue 2
+              fi
+              echo "$url not ready yet (attempt $attempt)"
+              sleep 10
+            done
+            echo "::error::$url never became healthy"
+            exit 1
+          done
+          echo "UI: $UI_URL"
