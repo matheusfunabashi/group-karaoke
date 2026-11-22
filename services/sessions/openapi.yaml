@@ -1,0 +1,293 @@
+openapi: 3.1.0
+info:
+  title: sessions service
+  description: Songs, karaoke sessions, participants and turns. Also answers the recordings
+    service's three seam calls.
+  version: 1.0.0
+paths:
+  /health:
+    get:
+      summary: 'Health: service, version and database status (503 when the database
+        is unreachable)'
+      operationId: health_health_get
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                additionalProperties: true
+                type: object
+                title: Response Health Health Get
+  /api/sessions/songs:
+    get:
+      tags:
+      - sessions
+      summary: List Songs
+      operationId: list_songs_api_sessions_songs_get
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+  /api/sessions:
+    post:
+      tags:
+      - sessions
+      summary: Create Session
+      operationId: create_session_api_sessions_post
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateSessionBody'
+        required: true
+      responses:
+        '201':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /api/sessions/{session_id}:
+    get:
+      tags:
+      - sessions
+      summary: Get Session
+      operationId: get_session_api_sessions__session_id__get
+      parameters:
+      - name: session_id
+        in: path
+        required: true
+        schema:
+          type: string
+          title: Session Id
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /api/sessions/{session_id}/participants:
+    post:
+      tags:
+      - sessions
+      summary: Join Session
+      operationId: join_session_api_sessions__session_id__participants_post
+      parameters:
+      - name: session_id
+        in: path
+        required: true
+        schema:
+          type: string
+          title: Session Id
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/JoinBody'
+      responses:
+        '201':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /api/sessions/{session_id}/turns/{turn_id}/claim:
+    post:
+      tags:
+      - sessions
+      summary: Claim Turn
+      operationId: claim_turn_api_sessions__session_id__turns__turn_id__claim_post
+      parameters:
+      - name: session_id
+        in: path
+        required: true
+        schema:
+          type: string
+          title: Session Id
+      - name: turn_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          title: Turn Id
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ClaimBody'
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /api/sessions/turns/{turn_id}/open:
+    get:
+      tags:
+      - sessions
+      summary: Get Open Turn
+      operationId: get_open_turn_api_sessions_turns__turn_id__open_get
+      parameters:
+      - name: turn_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          title: Turn Id
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /api/sessions/turns/{turn_id}/recorded:
+    post:
+      tags:
+      - sessions
+      summary: Mark Turn Recorded
+      operationId: mark_turn_recorded_api_sessions_turns__turn_id__recorded_post
+      parameters:
+      - name: turn_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          title: Turn Id
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /api/sessions/{session_id}/timeline:
+    get:
+      tags:
+      - sessions
+      summary: Get Timeline
+      operationId: get_timeline_api_sessions__session_id__timeline_get
+      parameters:
+      - name: session_id
+        in: path
+        required: true
+        schema:
+          type: string
+          title: Session Id
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+components:
+  schemas:
+    ClaimBody:
+      properties:
+        participant_id:
+          type: integer
+          title: Participant Id
+      type: object
+      required:
+      - participant_id
+      title: ClaimBody
+    CreateSessionBody:
+      properties:
+        song_id:
+          type: integer
+          title: Song Id
+        host_name:
+          type: string
+          title: Host Name
+      type: object
+      required:
+      - song_id
+      - host_name
+      title: CreateSessionBody
+    HTTPValidationError:
+      properties:
+        detail:
+          items:
+            $ref: '#/components/schemas/ValidationError'
+          type: array
+          title: Detail
+      type: object
+      title: HTTPValidationError
+    JoinBody:
+      properties:
+        display_name:
+          type: string
+          title: Display Name
+      type: object
+      required:
+      - display_name
+      title: JoinBody
+    ValidationError:
+      properties:
+        loc:
+          items:
+            anyOf:
+            - type: string
+            - type: integer
+          type: array
+          title: Location
+        msg:
+          type: string
+          title: Message
+        type:
+          type: string
+          title: Error Type
+        input:
+          title: Input
+        ctx:
+          type: object
+          title: Context
+      type: object
+      required:
+      - loc
+      - msg
+      - type
+      title: ValidationError

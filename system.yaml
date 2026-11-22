@@ -1,0 +1,80 @@
+# The whole system: services, configuration, calls between them, and where each part runs
+# on Azure. Validated against system.schema.json in CI.
+student: mgimenes
+prefix: mgimenes
+public_url: https://mgimenesui.z1.web.core.windows.net
+
+ui:
+  path: ui
+  storage_account: mgimenesui
+  calls: [sessions, recordings]
+
+azure:
+  resource_group: rg-mgimenes
+  container_apps_environment: mgimenes-env
+  sql_server: mgimenes-sql
+  registry: ghcr.io/matheusfunabashi
+
+services:
+  sessions:
+    description: Songs, karaoke sessions, participants and turns.
+    path: services/sessions
+    openapi: services/sessions/openapi.yaml
+    port_default: 8000
+    health: /health
+    migrations: services/sessions/migrations
+    env:
+      PORT:
+        description: Port the service listens on.
+        default: 8000
+      DATABASE_URL:
+        description: "SQL Server connection string: mssql+pymssql://user:password@host:1433/database, plus ?encryption=require on Azure."
+        secret: true
+      CORS_ORIGINS:
+        description: Comma-separated browser origins allowed to call the API (the UI's address).
+        default: http://localhost:8080
+      APP_VERSION:
+        description: Version shown by /health; CD sets it to the git commit SHA.
+        default: dev
+    azure:
+      container_app: mgimenes-sessions
+      sql_database: mgimenes-sessions-db
+
+  recordings:
+    description: One audio clip per claimed turn, and the finale playlist.
+    path: services/recordings
+    openapi: services/recordings/openapi.yaml
+    port_default: 8000
+    health: /health
+    migrations: services/recordings/migrations
+    env:
+      PORT:
+        description: Port the service listens on.
+        default: 8000
+      DATABASE_URL:
+        description: "SQL Server connection string: mssql+pymssql://user:password@host:1433/database, plus ?encryption=require on Azure."
+        secret: true
+      SESSIONS_URL:
+        description: Base URL of the sessions service.
+        default: http://localhost:8001
+      DATA_DIR:
+        description: Folder where uploaded clips are stored until they move into the database (ADR-7).
+        default: ./data
+      CORS_ORIGINS:
+        description: Comma-separated browser origins allowed to call the API (the UI's address).
+        default: http://localhost:8080
+      APP_VERSION:
+        description: Version shown by /health; CD sets it to the git commit SHA.
+        default: dev
+    calls:
+      - service: sessions
+        url_env: SESSIONS_URL
+        endpoints:
+          - GET /api/sessions/turns/{turn_id}/open
+          - POST /api/sessions/turns/{turn_id}/recorded
+          - GET /api/sessions/{session_id}/timeline
+        timeout_s: 3
+        on_failure: "503 to the caller; an upload is rolled back so nothing is saved and the UI can retry"
+    azure:
+      container_app: mgimenes-recordings
+      sql_database: mgimenes-recordings-db
