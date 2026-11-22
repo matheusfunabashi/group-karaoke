@@ -2,7 +2,7 @@
 is copyrighted and included only as a non-commercial class demo track.
 
 The data lives in seed.json (readable text, not a database file, see brief §7.11) and is
-loaded into SQLite on first boot by service.seed_catalog(), only when the songs table is empty.
+loaded into the database on first boot by service.seed_catalog(), only when the songs table is empty.
 """
 import json
 from pathlib import Path

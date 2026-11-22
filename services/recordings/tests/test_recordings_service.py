@@ -2,18 +2,8 @@ import pytest
 
 from recordings import repository as repo
 from recordings import service
-from recordings.db import connect, init_db
 
 CLIP = b"\x1a\x45\xdf\xa3 fake webm audio bytes" + bytes(2048)
-
-
-@pytest.fixture
-def conn(tmp_path):
-    db_path = tmp_path / "test.db"
-    init_db(db_path)
-    conn = connect(db_path)
-    yield conn
-    conn.close()
 
 
 @pytest.fixture
