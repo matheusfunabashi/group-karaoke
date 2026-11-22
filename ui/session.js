@@ -1,9 +1,8 @@
-// Session page: join, wait for the host to start, then record your lines.
+// Session page: join, wait for the host to start, then go to the recording page (record.html).
 // When the host presses Start, the song's lines are dealt to the singers in rotation
 // (one line each, then the next person), so each turn is short.
 
 const sessionId = new URLSearchParams(window.location.search).get("id");
-let backingTrackUrl = null;
 let refreshTimer = null; // while waiting for the host, reload every few seconds to see who joined
 
 async function load() {
@@ -14,7 +13,6 @@ async function load() {
   const started = session.turns.length > 0;
   const hostId = session.participants[0].id;
 
-  backingTrackUrl = "/" + session.song.audio_file;
   document.getElementById("song-title").textContent = session.song.title;
   document.getElementById("finale-link").href = `/finale.html?id=${encodeURIComponent(sessionId)}`;
   document.getElementById("status").textContent =
@@ -45,7 +43,7 @@ async function load() {
   const recordAll = document.getElementById("record-all");
   recordAll.hidden = mine.length === 0;
   recordAll.textContent = `Record all my lines (${mine.length})`;
-  recordAll.onclick = () => recordLines(mine, recordAll);
+  recordAll.onclick = () => (window.location.href = `/record.html?id=${encodeURIComponent(sessionId)}`);
 
   const list = document.getElementById("turns");
   list.replaceChildren();
@@ -56,10 +54,12 @@ async function load() {
     text.append(el("div", `${turn.position}. ${turn.lyrics}`, "lyrics"));
     text.append(el("div", `${names[turn.participant_id] ?? "nobody"} · ${turn.status}`, "muted"));
     row.append(text);
-    // One Record button per line too, to redo a single line that went wrong
+    // One Record button per line too, to sing a single line again on the recording page
     if (turn.status === "assigned" && turn.participant_id === me) {
       const record = el("button", "Record");
-      record.addEventListener("click", () => recordLines([turn], record));
+      record.addEventListener("click", () => {
+        window.location.href = `/record.html?id=${encodeURIComponent(sessionId)}&turn=${turn.id}`;
+      });
       row.append(record);
     }
     list.append(row);
@@ -73,76 +73,6 @@ async function startSession() {
       body: JSON.stringify({ participant_id: myParticipantId(sessionId) }),
     });
     await load();
-  } catch (error) {
-    showError(error);
-  }
-}
-
-// Wait until the backing track reaches `ms` milliseconds into the song.
-function untilTrackReaches(backing, ms) {
-  return new Promise((resolve) => {
-    const check = () => (backing.currentTime * 1000 >= ms || backing.ended ? resolve() : setTimeout(check, 20));
-    check();
-  });
-}
-
-// Record one clip per line in a single pass: the backing track plays from the first of these
-// lines, and the microphone is recorded only during each line (other people's lines play in
-// between). Each clip is uploaded as soon as its line ends.
-async function recordLines(turns, button) {
-  showError(null);
-  let stream;
-  try {
-    stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-  } catch {
-    showError(new Error("Microphone access is needed to record your lines"));
-    return;
-  }
-
-  const nowSinging = document.getElementById("now-singing");
-  const backing = new Audio(backingTrackUrl);
-  backing.currentTime = turns[0].start_ms / 1000;
-  button.disabled = true;
-  button.textContent = "Recording…";
-  await backing.play();
-
-  // Clips are uploaded one after another (never two at once), in the background while the next
-  // line is sung: parallel uploads would make the sessions database update turns at the same time.
-  let uploads = Promise.resolve();
-  for (const turn of turns) {
-    nowSinging.textContent = `Get ready: ${turn.lyrics}`;
-    await untilTrackReaches(backing, turn.start_ms);
-    nowSinging.textContent = `🎤 Sing now: ${turn.lyrics}`;
-    document.getElementById(`turn-${turn.id}`)?.classList.add("singing");
-
-    const recorder = new MediaRecorder(stream);
-    const chunks = [];
-    recorder.addEventListener("dataavailable", (event) => chunks.push(event.data));
-    const stopped = new Promise((resolve) => recorder.addEventListener("stop", resolve));
-    recorder.start();
-    await untilTrackReaches(backing, turn.end_ms);
-    recorder.stop();
-    await stopped;
-    document.getElementById(`turn-${turn.id}`)?.classList.remove("singing");
-    // recorder.mimeType is e.g. "audio/webm;codecs=opus" (Chrome) or "audio/mp4" (Safari).
-    const clip = new Blob(chunks, { type: recorder.mimeType });
-    uploads = uploads.then(() => uploadClip(turn.id, clip));
-  }
-
-  backing.pause();
-  stream.getTracks().forEach((track) => track.stop()); // turn the microphone off
-  nowSinging.textContent = "Saving your lines…";
-  await uploads;
-  nowSinging.textContent = "";
-  await load();
-}
-
-async function uploadClip(turnId, clip) {
-  const form = new FormData();
-  form.append("turn_id", turnId);
-  form.append("clip", clip, `turn-${turnId}`);
-  try {
-    await api("/api/recordings", { method: "POST", body: form });
   } catch (error) {
     showError(error);
   }

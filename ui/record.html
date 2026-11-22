@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Sing · Group Karaoke</title>
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+  <main class="karaoke">
+    <p><a id="back-link">← Back to the session</a></p>
+    <h1 id="song-title">Loading…</h1>
+
+    <!-- Before singing: one button, because browsers only play audio and open the
+         microphone after a click -->
+    <div class="card" id="ready-card" hidden>
+      <p id="ready-text"></p>
+      <p class="muted">Put your headphones on, so the backing track isn't recorded with your voice.</p>
+      <button id="go-button">Start singing</button>
+    </div>
+
+    <!-- While singing: the karaoke screen -->
+    <div id="stage" hidden>
+      <p id="cue" class="cue"></p>
+      <p id="current-line" class="big-line"></p>
+      <p id="next-line" class="next-line"></p>
+      <p id="progress" class="muted"></p>
+      <button id="stop-button" class="secondary">Stop</button>
+    </div>
+
+    <!-- After singing -->
+    <div class="card" id="done-card" hidden>
+      <h2 id="done-title"></h2>
+      <p id="done-text" class="muted"></p>
+      <button id="done-button">Done</button>
+    </div>
+
+    <p id="error" class="error"></p>
+  </main>
+  <script src="/config.js"></script>
+  <script src="/api.js"></script>
+  <script src="/record.js"></script>
+</body>
+</html>
