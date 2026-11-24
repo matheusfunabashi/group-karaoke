@@ -9,6 +9,7 @@ CLIP = b"\x1a\x45\xdf\xa3 fake webm audio bytes" + bytes(2048)
 @pytest.mark.parametrize(
     "content_type, extension",
     [
+        ("audio/wav", ".wav"),
         ("audio/webm", ".webm"),
         ("audio/webm;codecs=opus", ".webm"),
         ("audio/ogg;codecs=opus", ".ogg"),
