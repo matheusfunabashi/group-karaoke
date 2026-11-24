@@ -54,14 +54,6 @@ async function load() {
     text.append(el("div", `${turn.position}. ${turn.lyrics}`, "lyrics"));
     text.append(el("div", `${names[turn.participant_id] ?? "nobody"} · ${turn.status}`, "muted"));
     row.append(text);
-    // One Record button per line too, to sing a single line again on the recording page
-    if (turn.status === "assigned" && turn.participant_id === me) {
-      const record = el("button", "Record");
-      record.addEventListener("click", () => {
-        window.location.href = `/record.html?id=${encodeURIComponent(sessionId)}&turn=${turn.id}`;
-      });
-      row.append(record);
-    }
     list.append(row);
   }
 }

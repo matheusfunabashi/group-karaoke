@@ -1,21 +1,17 @@
-// Recording page: a karaoke screen. The backing track plays, the current line is shown big and
-// fills in word by word, and the microphone records only during this person's lines. Each of
-// their lines becomes one clip, uploaded as soon as the line ends.
-//
-// record.html?id=<session>            all of my lines that still need a recording
-// record.html?id=<session>&turn=<id>  just that one line (to sing it again)
+// Recording page (record.html?id=<session>): a karaoke screen. The whole song plays, so it is easy
+// to keep the rhythm; the current line is shown big and fills in word by word. Only this person's
+// lines that still need a recording are recorded; on everyone else's the screen says "Not your
+// part". Each of my lines becomes one clip, uploaded as soon as the line ends.
 //
 // Timing (see karaoke.js): the backing track is decoded into memory and played on the Web Audio
 // clock. The lyrics follow songMs(), the position in the song the singer is hearing right now.
 // The microphone is captured on the audio thread the whole time, and each of my lines is cut out
 // of it afterwards at the exact moments it was sung, so the clip lines up with the music.
 
-const params = new URLSearchParams(window.location.search);
-const sessionId = params.get("id");
-const onlyTurn = params.get("turn") ? Number(params.get("turn")) : null;
+const sessionId = new URLSearchParams(window.location.search).get("id");
 const sessionPage = `/session.html?id=${encodeURIComponent(sessionId)}`;
-const LEAD_IN_MS = 3000; // start the music a little before the first line, to find the beat
 const COUNTDOWN_MS = 3000; // "your line in 3, 2, 1" before each of my lines
+const CUT_MARGIN_MS = 400; // wait this long after a line ends, so its last sound has arrived
 
 let backingBuffer = null; // the decoded backing track
 let source = null; // the backing track while it plays
@@ -23,7 +19,7 @@ let songStart = 0; // audio-clock time (s) at which song position 0 would have b
 let stream = null; // the microphone
 let capture = null; // the microphone recorder on the audio thread (startCapture in karaoke.js)
 let micDelayS = 0; // how late the microphone delivers sound (reported by Chrome, else 0)
-let mine = []; // my lines on this page
+let mine = []; // my lines that still need a recording
 const cut = new Set(); // my lines already cut out of the capture and sent
 let stopped = false;
 let uploads = Promise.resolve(); // one upload at a time (see uploadClip)
@@ -43,20 +39,15 @@ async function load() {
   document.getElementById("song-title").textContent = session.song.title;
   document.getElementById("back-link").href = sessionPage;
 
-  mine = session.turns.filter(
-    (t) => t.participant_id === me && t.status === "assigned" && (onlyTurn === null || t.id === onlyTurn),
-  );
+  mine = session.turns.filter((t) => t.participant_id === me && t.status === "assigned");
   if (mine.length === 0) {
     showDone("Nothing to record", "You have no lines waiting for a recording in this session.");
     return;
   }
-  // Everything that plays between my first and last line, including other people's lines,
-  // so I can follow the song and know when my next line comes.
-  const from = mine[0].start_ms;
-  const to = mine[mine.length - 1].end_ms;
-  const lines = session.turns
-    .filter((t) => t.end_ms > from && t.start_ms < to)
-    .map((t) => ({ ...t, singer: names[t.participant_id] ?? "someone", isMine: mine.includes(t) }));
+  // Every line of the song, so the singer can follow all of it and knows when their turn comes
+  const lines = session.turns.map((t) => ({
+    ...t, singer: names[t.participant_id] ?? "someone", isMine: mine.includes(t),
+  }));
 
   const ready = document.getElementById("ready-text");
   const go = document.getElementById("go-button");
@@ -64,9 +55,8 @@ async function load() {
   ready.textContent = "Loading the song…";
   go.disabled = true;
   backingBuffer = await loadAudio("/" + session.song.audio_file);
-  ready.textContent = mine.length === 1
-    ? "You have 1 line to sing."
-    : `You have ${mine.length} lines to sing. The song plays from just before your first one.`;
+  ready.textContent = `You have ${mine.length} line${mine.length === 1 ? "" : "s"} to sing. ` +
+    "The whole song plays; only your lines are recorded.";
   go.disabled = false;
   go.onclick = () => sing(lines);
 }
@@ -90,13 +80,13 @@ async function sing(lines) {
   document.getElementById("ready-card").hidden = true;
   document.getElementById("stage").hidden = false;
 
-  // Start the backing track a moment from now, from just before my first line
-  const offsetS = Math.max(0, mine[0].start_ms - LEAD_IN_MS) / 1000;
+  // Start the whole song a moment from now
   const when = audioContext().currentTime + 0.1;
-  source = playBuffer(backingBuffer, when, offsetS);
-  songStart = when - offsetS;
+  source = playBuffer(backingBuffer, when);
+  songStart = when;
 
-  const end = mine[mine.length - 1].end_ms;
+  // Stop at the end of the song (and never before my last line has been cut out)
+  const end = Math.max(backingBuffer.duration * 1000, mine[mine.length - 1].end_ms + CUT_MARGIN_MS);
 
   // Runs on every screen refresh (about 60 times a second): the song position decides which
   // line is shown and how much of it is filled in, and which of my lines are over and can be cut
@@ -107,9 +97,14 @@ async function sing(lines) {
     const now = songMs();
     const index = lines.findIndex((line) => now < line.end_ms);
     const line = lines[index];
-    if (line) showLine(line, lines[index + 1], now);
+    if (line) {
+      showLine(line, lines[index + 1], now);
+    } else {
+      document.getElementById("cue").textContent = "End of the song";
+      document.getElementById("next-line").textContent = "";
+    }
     cutFinishedLines(now);
-    if (now >= end + CUT_MARGIN_MS) {
+    if (now >= end) {
       finish();
     } else {
       requestAnimationFrame(tick);
@@ -118,7 +113,6 @@ async function sing(lines) {
   requestAnimationFrame(tick);
 }
 
-const CUT_MARGIN_MS = 400; // wait this long after a line ends, so its last sound has arrived
 
 // Cut out every one of my lines that is over, and upload it.
 function cutFinishedLines(now) {
@@ -135,17 +129,17 @@ function cutFinishedLines(now) {
   }
 }
 
-// The big line, plus what to do now ("Sing now!", a countdown, or who is singing) and what's next.
+// The big line, plus what to do now and what's next. On my lines: a countdown, then "Sing now!".
+// On everyone else's: "Not your part", and who is singing it.
 function showLine(line, next, now) {
   renderLine(document.getElementById("current-line"), line, now, line.isMine);
   const cue = document.getElementById("cue");
-  if (now < line.start_ms) {
+  if (line.isMine) {
     const seconds = Math.ceil((line.start_ms - now) / 1000);
-    cue.textContent = line.isMine && line.start_ms - now <= COUNTDOWN_MS
-      ? `Your line in ${seconds}…`
-      : `${line.isMine ? "You" : line.singer} next`;
+    cue.textContent = now >= line.start_ms ? "🎤 Sing now!"
+      : line.start_ms - now <= COUNTDOWN_MS ? `Your line in ${seconds}…` : "Your line is next";
   } else {
-    cue.textContent = line.isMine ? "🎤 Sing now!" : `${line.singer} is singing`;
+    cue.textContent = `Not your part · ${line.singer} ${now >= line.start_ms ? "is singing" : "is next"}`;
   }
   document.getElementById("next-line").textContent = next ? `${next.isMine ? "You" : next.singer}: ${next.lyrics}` : "";
   const done = mine.filter((t) => t.end_ms <= now).length;
