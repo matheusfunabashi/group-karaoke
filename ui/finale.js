@@ -4,6 +4,8 @@
 // Timing (see karaoke.js): the backing track and all clips are downloaded and decoded before Play
 // is enabled, then every one is scheduled on the same Web Audio clock, so each clip starts exactly
 // at its line instead of whenever a timer fires and the clip has finished downloading.
+//
+// Above the lyrics is the karaoke room (characters.js): whoever sang the line playing stands up.
 
 const sessionId = new URLSearchParams(window.location.search).get("id");
 let items = []; // the playlist, with lyrics and singer added and each clip's decoded audio
@@ -11,6 +13,7 @@ let backingBuffer = null;
 let playing = []; // the sources currently playing, so Stop can end them
 let songStart = 0; // audio-clock time (s) at which the song started
 let running = false;
+let room = null; // everyone around the table; the singer of the line playing stands up
 
 async function load() {
   // The finale (from recordings) has the timing and clips; the session (from sessions) has the
@@ -22,10 +25,15 @@ async function load() {
   document.getElementById("back-link").href = `/session.html?id=${encodeURIComponent(sessionId)}`;
   const names = Object.fromEntries(session.participants.map((p) => [p.id, p.display_name]));
   const turns = Object.fromEntries(session.turns.map((t) => [t.id, t]));
+  room = createRoom(document.getElementById("room"));
+  room.setTitle(session.song.title);
+  room.setPeople(session.participants, myParticipantId(sessionId));
+  room.setCaption("Press Play");
   items = finale.playlist.map((item) => ({
     ...item,
     id: item.turn_id,
     lyrics: turns[item.turn_id]?.lyrics ?? "",
+    participant_id: turns[item.turn_id]?.participant_id,
     singer: names[turns[item.turn_id]?.participant_id] ?? "someone",
   }));
 
@@ -83,6 +91,7 @@ function show() {
   const now = (heardTime() - songStart) * 1000;
   const line = items.find((item) => now < item.end_ms);
   const cue = document.getElementById("cue");
+  room.setSinger(line && now >= line.start_ms ? line.participant_id : null);
   if (line) {
     renderLine(document.getElementById("current-line"), line, now, Boolean(line.buffer));
     cue.textContent = now < line.start_ms ? `${line.singer} next` : `${line.singer}${line.buffer ? "" : " (not recorded)"}`;
@@ -94,6 +103,7 @@ function show() {
 
 function stop() {
   running = false;
+  room?.setSinger(null);
   for (const source of playing) source.stop();
   playing = [];
   document.getElementById("stop").disabled = true;

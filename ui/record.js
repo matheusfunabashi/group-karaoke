@@ -7,6 +7,8 @@
 // clock. The lyrics follow songMs(), the position in the song the singer is hearing right now.
 // The microphone is captured on the audio thread the whole time, and each of my lines is cut out
 // of it afterwards at the exact moments it was sung, so the clip lines up with the music.
+//
+// Above the lyrics is the karaoke room (characters.js): whoever has the line being sung stands up.
 
 const sessionId = new URLSearchParams(window.location.search).get("id");
 const sessionPage = `/session.html?id=${encodeURIComponent(sessionId)}`;
@@ -26,6 +28,7 @@ let uploads = Promise.resolve(); // one upload at a time (see uploadClip)
 let saved = 0;
 let failed = 0;
 let total = 0; // how many lines this person is singing on this page
+let room = null; // everyone around the table; the singer of the current line stands up
 
 // Position in the song, in ms, that the singer is hearing now.
 function songMs() {
@@ -38,6 +41,9 @@ async function load() {
   const names = Object.fromEntries(session.participants.map((p) => [p.id, p.display_name]));
   document.getElementById("song-title").textContent = session.song.title;
   document.getElementById("back-link").href = sessionPage;
+  room = createRoom(document.getElementById("room"));
+  room.setTitle(session.song.title);
+  room.setPeople(session.participants, me);
 
   mine = session.turns.filter((t) => t.participant_id === me && t.status === "assigned");
   if (mine.length === 0) {
@@ -97,6 +103,7 @@ async function sing(lines) {
     const now = songMs();
     const index = lines.findIndex((line) => now < line.end_ms);
     const line = lines[index];
+    room.setSinger(line && now >= line.start_ms ? line.participant_id : null);
     if (line) {
       showLine(line, lines[index + 1], now);
     } else {
