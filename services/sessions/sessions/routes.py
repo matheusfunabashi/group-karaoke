@@ -11,10 +11,12 @@ router = APIRouter()
 class CreateSessionBody(BaseModel):
     song_id: int
     host_name: str
+    avatar: int | None = None  # the host's character, 1-6 (none: character 1)
 
 
 class JoinBody(BaseModel):
     display_name: str
+    avatar: int | None = None  # the singer's character, 1-6 (none: one nobody in the session has yet)
 
 
 class StartBody(BaseModel):
@@ -40,7 +42,7 @@ def list_songs(conn=Depends(get_conn)):
 
 @router.post("", status_code=201)
 def create_session(body: CreateSessionBody, conn=Depends(get_conn)):
-    return _call(service.create_session, conn, body.song_id, body.host_name)
+    return _call(service.create_session, conn, body.song_id, body.host_name, body.avatar)
 
 
 @router.get("/{session_id}")
@@ -50,7 +52,7 @@ def get_session(session_id: str, conn=Depends(get_conn)):
 
 @router.post("/{session_id}/participants", status_code=201)
 def join_session(session_id: str, body: JoinBody, conn=Depends(get_conn)):
-    return _call(service.join_session, conn, session_id, body.display_name)
+    return _call(service.join_session, conn, session_id, body.display_name, body.avatar)
 
 
 @router.post("/{session_id}/start")

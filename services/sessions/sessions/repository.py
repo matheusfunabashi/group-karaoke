@@ -83,11 +83,15 @@ def set_session_status(conn, session_id: str, status: str) -> None:
 
 # --- participants --------------------------------------------------------
 
-def insert_participant(conn, session_id: str, display_name: str, joined_at) -> int:
+def insert_participant(conn, session_id: str, display_name: str, joined_at, avatar: int = 1) -> int:
+    """avatar: which of the six pixel-art characters this singer picked (1-6, see migration V003)."""
     return _insert(
         conn,
-        "INSERT INTO participants (session_id, display_name, joined_at) OUTPUT INSERTED.id VALUES (%s, %s, %s)",
-        (session_id, display_name, joined_at),
+        """
+        INSERT INTO participants (session_id, display_name, joined_at, avatar)
+        OUTPUT INSERTED.id VALUES (%s, %s, %s, %s)
+        """,
+        (session_id, display_name, joined_at, avatar),
     )
 
 

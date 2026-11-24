@@ -229,6 +229,12 @@ components:
         host_name:
           type: string
           title: Host Name
+        avatar:
+          anyOf:
+          - type: integer
+          - type: 'null'
+          title: Avatar
+          description: The host's pixel-art character, 1-6 (none given → character 1)
       type: object
       required:
       - song_id
@@ -248,6 +254,13 @@ components:
         display_name:
           type: string
           title: Display Name
+        avatar:
+          anyOf:
+          - type: integer
+          - type: 'null'
+          title: Avatar
+          description: The singer's pixel-art character, 1-6 (none given → the first one nobody
+            in the session has yet). Several singers may pick the same one.
       type: object
       required:
       - display_name

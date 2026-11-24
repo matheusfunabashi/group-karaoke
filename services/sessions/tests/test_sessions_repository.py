@@ -41,6 +41,16 @@ def test_same_display_name_cannot_join_a_session_twice(conn, song_id):
     assert len(repo.list_participants(conn, "abc123")) == 1
 
 
+def test_participants_have_a_character_and_the_database_allows_only_six(conn, song_id):
+    repo.insert_session(conn, "abc123", song_id, "Ana", datetime(2026, 10, 8, 10, 0))
+    repo.insert_participant(conn, "abc123", "Ana", datetime(2026, 10, 8, 10, 0))
+    repo.insert_participant(conn, "abc123", "Ben", datetime(2026, 10, 8, 10, 1), avatar=6)
+    assert [p["avatar"] for p in repo.list_participants(conn, "abc123")] == [1, 6]
+
+    with pytest.raises(pymssql.IntegrityError):  # the CHECK constraint from migration V003
+        repo.insert_participant(conn, "abc123", "Cleo", datetime(2026, 10, 8, 10, 2), avatar=7)
+
+
 def test_turns_join_segment_timing_and_can_be_assigned(conn, song_id):
     repo.insert_session(conn, "abc123", song_id, "Ana", datetime(2026, 10, 8, 10, 0))
     ben = repo.insert_participant(conn, "abc123", "Ben", datetime(2026, 10, 8, 10, 1))

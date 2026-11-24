@@ -90,6 +90,7 @@ button.secondary:hover:not(:disabled) { background: #422838; }
 :focus-visible { outline: 3px solid #ffd08e; outline-offset: 3px; }
 form { display: flex; gap: 8px; flex-wrap: wrap; }
 form input, form select { flex: 1 1 180px; }
+.pick-label { flex-basis: 100%; margin: 6px 0 0; }
 .turn { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 10px 0; border-top: 1px solid var(--line); }
 .turn:first-child { border-top: none; }
 .turn > div { min-width: 0; overflow-wrap: anywhere; }
@@ -131,3 +132,62 @@ form input, form select { flex: 1 1 180px; }
 .big-line.mine { --done: var(--accent); }
 .next-line { color: var(--muted); opacity: .7; min-height: 1.5em; }
 
+
+/* The pixel-art karaoke room (characters.js): a 200 x 112 canvas scaled up without smoothing, so
+   the pixels stay crisp. The TV text and the name tags are HTML on top of it, positioned in % of
+   the room; cqw is 1% of the room's width, so the text grows with the room. */
+.room {
+  position: relative;
+  container-type: inline-size;
+  margin: 16px 0;
+  border: 2px solid #0b0710;
+  border-radius: 10px;
+  overflow: hidden;
+  box-shadow: 0 0 0 2px var(--line), 0 16px 40px -18px rgba(255, 122, 184, .45);
+}
+.room canvas { display: block; width: 100%; height: auto; image-rendering: pixelated; }
+.tv-text {
+  position: absolute;
+  left: 34.5%; right: 34.5%; top: 15.5%; height: 27%;
+  display: grid; place-content: center; gap: .6cqw;
+  overflow: hidden;
+  text-align: center;
+  font: 700 clamp(7px, 1.9cqw, 13px)/1.25 ui-monospace, Menlo, Consolas, monospace;
+  color: #e8f0ff;
+  overflow-wrap: anywhere;
+}
+.tv-who { color: #ffd76a; }
+.tag {
+  position: absolute; top: 84%;
+  transform: translateX(-50%);
+  padding: .5cqw .8cqw;
+  border-radius: 3px;
+  background: rgba(22, 13, 29, .82);
+  color: var(--fg);
+  font: 700 clamp(7px, 1.7cqw, 11px)/1 ui-monospace, Menlo, Consolas, monospace;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.tag.me { box-shadow: inset 0 0 0 1px var(--accent); }
+.tag.singing { background: #ffd76a; color: #2a1022; }
+
+/* The character picker: six radio buttons drawn as the characters (the radio itself is hidden). */
+.picker { flex-basis: 100%; display: grid; grid-template-columns: repeat(6, 1fr); gap: 6px; }
+.pick {
+  position: relative;
+  display: grid; justify-items: center; gap: 2px;
+  padding: 8px 2px 6px;
+  border: 2px solid var(--line);
+  border-radius: 10px;
+  background: #251b2a;
+  cursor: pointer;
+}
+.pick input { position: absolute; opacity: 0; pointer-events: none; }
+.pick canvas { width: 48px; height: 54px; image-rendering: pixelated; }
+.pick span { font-size: .75rem; color: var(--muted); }
+.pick:hover { border-color: #a07088; }
+.pick:has(input:checked) { border-color: var(--accent); background: #3a2232; }
+.pick:has(input:checked) span { color: var(--fg); }
+.pick:has(input:focus-visible) { outline: 3px solid #ffd08e; outline-offset: 2px; }
+@media (max-width: 480px) {
+  .picker { grid-template-columns: repeat(3, 1fr); }
+}

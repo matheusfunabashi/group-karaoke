@@ -18,6 +18,19 @@ def test_full_flow_over_http(client):
     assert client.get(f"/api/sessions/{session_id}").json()["turns"][0]["status"] == "assigned"
 
 
+def test_create_and_join_with_a_character(client):
+    created = client.post("/api/sessions", json={"song_id": _row_your_boat(client), "host_name": "Ana", "avatar": 5})
+    session_id = created.json()["id"]
+    assert created.json()["participants"][0]["avatar"] == 5
+
+    joined = client.post(f"/api/sessions/{session_id}/participants", json={"display_name": "Ben", "avatar": 2})
+    assert joined.json()["avatar"] == 2
+    no_pick = client.post(f"/api/sessions/{session_id}/participants", json={"display_name": "Cleo"})
+    assert no_pick.json()["avatar"] == 1  # the first character nobody has yet
+    too_big = client.post(f"/api/sessions/{session_id}/participants", json={"display_name": "Dan", "avatar": 9})
+    assert too_big.status_code == 422
+
+
 def test_service_errors_become_http_status_codes(client):
     song_id = _row_your_boat(client)
     assert client.get("/api/sessions/missing").status_code == 404

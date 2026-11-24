@@ -77,6 +77,29 @@ def test_join_trims_name_and_rejects_duplicates(conn, session):
         service.join_session(conn, "nope", "Cleo")
 
 
+def test_singers_keep_the_character_they_picked(conn, song_id):
+    session = service.create_session(conn, song_id, "Ana", avatar=4)
+    ben = service.join_session(conn, session["id"], "Ben", avatar=4)  # two singers may pick the same one
+    assert ben["avatar"] == 4
+    assert [p["avatar"] for p in service.get_session(conn, session["id"])["participants"]] == [4, 4]
+
+
+def test_a_singer_who_doesnt_pick_gets_a_character_nobody_has_yet(conn, session):
+    service.join_session(conn, session["id"], "Ben", avatar=2)  # the host, Ana, has character 1
+    assert service.join_session(conn, session["id"], "Cleo")["avatar"] == 3
+    for name in ("Dan", "Eve", "Fay"):  # now all six are taken
+        service.join_session(conn, session["id"], name)
+    assert service.join_session(conn, session["id"], "Gus")["avatar"] == 1  # 6 singers so far: next in turn
+
+
+@pytest.mark.parametrize("avatar", [0, 7, -1])
+def test_only_the_six_characters_can_be_picked(conn, session, avatar):
+    with pytest.raises(ValueError):
+        service.join_session(conn, session["id"], "Ben", avatar=avatar)
+    with pytest.raises(ValueError):
+        service.create_session(conn, session["song_id"], "Ana", avatar=avatar)
+
+
 @pytest.mark.parametrize(
     "lines, players, sizes",
     [
