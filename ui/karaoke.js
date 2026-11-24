@@ -157,34 +157,53 @@ function wavFile(samples, rate) {
   return new Blob([view.buffer], { type: "audio/wav" });
 }
 
-// How fast the words fill in. A song timed from its real recording (Payphone: LRCLIB timestamps)
-// only knows where each line starts, so a line lasts until the next one starts, through any pause
-// or held note after it. Filling evenly up to that point trailed the singing by up to 2.6 s, so
-// such songs fill at their usual singing pace (1.25 x the median letters per second of their
-// lines) and the line then stays full until the next. The traditional songs' melodies were made
-// to spread evenly over each line, so they fill over the whole line (pace null).
-let fillPace = null; // letters per ms
+// Roughly how many syllables a word has: its groups of vowels, minus a silent "e" at the end and
+// the "-es"/"-ed" endings that aren't sung as their own syllable. A sung syllable is usually one
+// note, so filling word by word in syllables follows the rhythm much better than in letters
+// ("through" is one note, not seven letters' worth). Songs are timed per line only (there is no
+// word timing for them), so this is an estimate. "/" between merged lines takes no time.
+function syllables(word) {
+  const w = word.toLowerCase().replace(/[^a-z]/g, "");
+  if (!w) return 0;
+  let count = (w.match(/[aeiouy]+/g) ?? []).length;
+  if (count > 1 && /[^aeiouy]e$/.test(w) && !/[^aeiouy]le$/.test(w)) count--; // silent e: "smile", not "table"
+  if (count > 1 && /[^sxzcg]es$/.test(w) && !/[cs]hes$/.test(w)) count--; // "phones", not "places"
+  if (count > 1 && /[^td]ed$/.test(w)) count--; // "played", not "wanted"
+  if (/[aeiouy]ing$/.test(w)) count++; // "going", "trying": the vowel before -ing is its own syllable
+  return Math.max(1, count);
+}
+
+// How fast the words fill in, in syllables per ms. A song timed from its real recording (Payphone:
+// LRCLIB timestamps) only knows where each line starts, so a line lasts until the next one starts,
+// through any pause or held note after it. Filling evenly up to that point trailed the singing by
+// up to 2.6 s, so such songs fill at their usual singing pace (1.25 x the median syllables per
+// second of their lines) and the line then stays full until the next. The traditional songs'
+// melodies were made to spread evenly over each line, so they fill over the whole line (null).
+let fillPace = null;
 function paceLyrics(song, lines) {
   if (song.artist === "Traditional") return;
   const rates = lines
-    .map((line) => line.lyrics.replaceAll(" ", "").length / (line.end_ms - line.start_ms))
+    .map((line) => line.lyrics.split(" ").reduce((sum, word) => sum + syllables(word), 0) / (line.end_ms - line.start_ms))
     .sort((a, b) => a - b);
   fillPace = rates[Math.floor(rates.length / 2)] * 1.25;
 }
 
-// A per-device nudge for the lyrics, in ms (positive: show them later), for headphones whose delay
-// the browser misjudges. It only moves what is shown: recordings are always cut at the music's times.
-const OFFSET_KEY = "karaoke:lyrics-offset-ms";
+// A nudge for the lyrics, in ms (positive: show them later), kept in this browser for each song,
+// for headphones whose delay the browser misjudges. A song whose times are corrected is a new song
+// in the database (see seed_catalog), so its nudge starts again from 0. It only moves what is
+// shown: recordings are always cut at the music's times.
+let offsetKey = null;
 function lyricsOffset() {
   try {
-    return Number(localStorage.getItem(OFFSET_KEY)) || 0;
+    return Number(localStorage.getItem(offsetKey)) || 0;
   } catch {
     return 0; // storage blocked: no nudge
   }
 }
 
-// "Lyrics: ◀ earlier  +0.2 s  later ▶" buttons inside `container`.
-function lyricsNudge(container) {
+// "Lyrics timing: ◀ earlier  +0.2 s  later ▶" buttons inside `container`, for `song`.
+function lyricsNudge(container, song) {
+  offsetKey = `karaoke:lyrics-offset-ms:${song.id}`;
   const label = el("span", "", "nudge-value");
   const show = () => (label.textContent = `${lyricsOffset() >= 0 ? "+" : ""}${(lyricsOffset() / 1000).toFixed(1)} s`);
   const button = (text, step) => {
@@ -206,23 +225,29 @@ function lyricsNudge(container) {
 }
 
 // Show `line` in `element` as one <span> per word, each word filled (CSS reads --fill) up to how
-// far the song is into the line, in reading order. Songs are timed per line, not per word, so the
-// fill moves evenly through the line's letters (at the song's pace, see paceLyrics).
+// far the song is into the line, in reading order. Songs are timed per line, not per word, so each
+// word gets a share of the line's time in proportion to its syllables (see syllables), at the
+// song's pace (see paceLyrics).
 function renderLine(element, line, nowMs, isMine) {
   if (element.dataset.turn !== String(line.id)) {
     element.dataset.turn = line.id;
-    element.replaceChildren(...line.lyrics.split(" ").map((word) => el("span", word)));
+    element.replaceChildren(...line.lyrics.split(" ").map((word) => {
+      const span = el("span", word);
+      span.dataset.beats = syllables(word);
+      return span;
+    }));
   }
   element.classList.toggle("mine", isMine);
   const words = [...element.children];
-  const letters = words.reduce((sum, word) => sum + word.textContent.length, 0);
+  const beats = words.reduce((sum, word) => sum + Number(word.dataset.beats), 0);
   const lineMs = line.end_ms - line.start_ms;
-  const fillMs = fillPace ? Math.min(lineMs, letters / fillPace) : lineMs;
+  const fillMs = fillPace ? Math.min(lineMs, beats / fillPace) : lineMs;
   const progress = Math.min(1, Math.max(0, (nowMs - line.start_ms) / fillMs));
-  let reached = progress * letters;
+  let reached = progress * beats;
   for (const word of words) {
-    const length = word.textContent.length;
-    word.style.setProperty("--fill", `${Math.min(1, Math.max(0, reached / length)) * 100}%`);
-    reached -= length;
+    const share = Number(word.dataset.beats);
+    const filled = share ? reached / share : reached > 0 ? 1 : 0; // "/" lights up with the word before it
+    word.style.setProperty("--fill", `${Math.min(1, Math.max(0, filled)) * 100}%`);
+    reached -= share;
   }
 }

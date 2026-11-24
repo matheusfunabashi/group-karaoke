@@ -35,7 +35,7 @@ async function load() {
   room.setPeople(session.participants, myParticipantId(sessionId));
   room.setCaption("Press Play");
   paceLyrics(session.song, session.turns);
-  lyricsNudge(document.getElementById("nudge"));
+  lyricsNudge(document.getElementById("nudge"), session.song);
   items = finale.playlist.map((item) => ({
     ...item,
     id: item.turn_id,

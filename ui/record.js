@@ -55,7 +55,7 @@ async function load() {
     ...t, singer: names[t.participant_id] ?? "someone", isMine: mine.includes(t),
   }));
   paceLyrics(session.song, lines);
-  lyricsNudge(document.getElementById("nudge"));
+  lyricsNudge(document.getElementById("nudge"), session.song);
 
   const ready = document.getElementById("ready-text");
   const go = document.getElementById("go-button");
