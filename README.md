@@ -197,7 +197,7 @@ The Container Apps scale to zero and the databases pause after an hour without u
    and fills in word by word as the music goes through it, with a countdown and "Sing now!" on your
    lines and "Not your part" on everyone else's. Above the lyrics, whoever has the current line
    stands up in the room with the mic. If the lyrics feel early or late on your headphones, the
-   **Lyrics timing** buttons move them by 0.1 s (saved in this browser; the recording itself is
+   **Lyrics timing** buttons move them by 0.1 s (saved in this browser for that song; the recording itself is
    always cut at the music's times). Only your lines are recorded, each one cut out at
    exactly its start and end. When the song is over, **Done** takes you back. Lines that failed to
    save can be sung again with the same button, which records only the lines still missing.
@@ -216,6 +216,8 @@ Two songs are traditional, public-domain melodies whose backing tracks in `ui/au
 simple synthesized melodies made for this project. *Payphone* (Maroon 5) is copyrighted and is
 included only as a non-commercial class demo; it is not licensed for any other use. Its line timings
 come from LRCLIB (lrclib.net), a public database of synced lyrics: only the timestamps were taken and
-matched in order to the lines in `seed.json`, then shifted by +1.68 s because `ui/audio/payphone.mp3`
-is an instrumental remake that starts later than the original (same 110 BPM tempo, measured with
-ffmpeg).
+matched in order to the lines in `seed.json`, then shifted by +2.78 s because `ui/audio/payphone.mp3`
+is an instrumental remake that starts later than the original: +1.68 s to its first beat (same
+110 BPM tempo, measured with ffmpeg), plus 1.1 s (about two beats) measured by ear on the live site.
+LRCLIB has no word timing for it, so each word fills in for a share of its line in proportion to
+its syllables (a sung syllable is usually one note).
