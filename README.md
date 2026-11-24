@@ -34,7 +34,7 @@ Browser ── ui/ (Azure Storage static website)
 | sessions | GET | `/api/sessions/turns/{turn_id}/open` | *For recordings:* is this turn waiting for a clip? |
 | sessions | POST | `/api/sessions/turns/{turn_id}/recorded` | *For recordings:* mark the turn recorded |
 | sessions | GET | `/api/sessions/{id}/timeline` | *For recordings:* the turns' timing for the finale |
-| recordings | POST | `/api/recordings` | Upload a clip (multipart: `turn_id`, `clip`; webm/ogg/mp4 audio, max 5 MB) |
+| recordings | POST | `/api/recordings` | Upload a clip (multipart: `turn_id`, `clip`; wav/webm/ogg/mp4 audio, max 5 MB) |
 | recordings | GET | `/api/recordings/{id}/audio` | Play a clip |
 | recordings | GET | `/api/recordings/sessions/{id}/finale` | Backing track URL and the playlist of clips |
 
@@ -204,4 +204,6 @@ Two songs are traditional, public-domain melodies whose backing tracks in `ui/au
 simple synthesized melodies made for this project. *Payphone* (Maroon 5) is copyrighted and is
 included only as a non-commercial class demo; it is not licensed for any other use. Its line timings
 come from LRCLIB (lrclib.net), a public database of synced lyrics: only the timestamps were taken and
-matched in order to the lines in `seed.json`.
+matched in order to the lines in `seed.json`, then shifted by +1.68 s because `ui/audio/payphone.mp3`
+is an instrumental remake that starts later than the original (same 110 BPM tempo, measured with
+ffmpeg).
