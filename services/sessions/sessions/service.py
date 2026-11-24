@@ -15,6 +15,7 @@ from sessions.db import transaction
 from sessions.catalog import SONGS
 
 MAX_NAME_LENGTH = 30
+CHARACTERS = 6  # the pixel-art characters a singer can pick from (drawn by ui/characters.js)
 
 
 class NotFound(Exception):
@@ -39,6 +40,19 @@ def _clean_name(name: str) -> str:
     if not name or len(name) > MAX_NAME_LENGTH:
         raise ValueError(f"Name must be 1-{MAX_NAME_LENGTH} characters")
     return name
+
+
+def _check_avatar(avatar: int | None) -> None:
+    if avatar is not None and not 1 <= avatar <= CHARACTERS:
+        raise ValueError(f"Pick one of the {CHARACTERS} characters (1-{CHARACTERS})")
+
+
+def _free_avatar(participants: list[dict]) -> int:
+    """The character for a singer who didn't pick one: the first that nobody in the session has
+    yet, or, once all six are taken, the next one in turn."""
+    taken = {p["avatar"] for p in participants}
+    free = [n for n in range(1, CHARACTERS + 1) if n not in taken]
+    return free[0] if free else len(participants) % CHARACTERS + 1
 
 
 def _same_song(conn, current: dict, song: dict) -> bool:
@@ -72,10 +86,11 @@ def list_songs(conn) -> list[dict]:
     return repo.list_songs(conn)
 
 
-def create_session(conn, song_id: int, host_name: str) -> dict:
+def create_session(conn, song_id: int, host_name: str, avatar: int | None = None) -> dict:
     """Create a session for a song, with the host as its first participant. The turns are
     only created when the host starts the session, once everyone has joined."""
     host_name = _clean_name(host_name)
+    _check_avatar(avatar)
     if repo.get_song(conn, song_id) is None:
         raise NotFound(f"Song {song_id} not found")
 
@@ -83,7 +98,7 @@ def create_session(conn, song_id: int, host_name: str) -> dict:
     now = _now()
     with transaction(conn):  # one transaction: session and host are saved together or not at all
         repo.insert_session(conn, session_id, song_id, host_name, now)
-        repo.insert_participant(conn, session_id, host_name, now)
+        repo.insert_participant(conn, session_id, host_name, now, avatar or 1)
     return get_session(conn, session_id)
 
 
@@ -100,9 +115,11 @@ def get_session(conn, session_id: str) -> dict:
     }
 
 
-def join_session(conn, session_id: str, display_name: str) -> dict:
-    """Add a participant to an open session and return them."""
+def join_session(conn, session_id: str, display_name: str, avatar: int | None = None) -> dict:
+    """Add a participant to an open session, with the character they picked, and return them.
+    Several singers may pick the same character (a session can have more than six)."""
     display_name = _clean_name(display_name)
+    _check_avatar(avatar)
     session = repo.get_session(conn, session_id)
     if session is None:
         raise NotFound(f"Session {session_id} not found")
@@ -111,12 +128,14 @@ def join_session(conn, session_id: str, display_name: str) -> dict:
     if repo.list_turns(conn, session_id):
         raise Conflict("This session has already started, so nobody else can join")
 
+    if avatar is None:
+        avatar = _free_avatar(repo.list_participants(conn, session_id))
     try:
         with transaction(conn):
-            participant_id = repo.insert_participant(conn, session_id, display_name, _now())
+            participant_id = repo.insert_participant(conn, session_id, display_name, _now(), avatar)
     except pymssql.IntegrityError:
         raise Conflict(f"The name {display_name!r} is already taken in this session") from None
-    return {"id": participant_id, "session_id": session_id, "display_name": display_name}
+    return {"id": participant_id, "session_id": session_id, "display_name": display_name, "avatar": avatar}
 
 
 def turn_sizes(line_count: int, player_count: int) -> list[int]:
