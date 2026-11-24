@@ -9,13 +9,15 @@
 <body>
   <main>
     <h1>Group Karaoke</h1>
-    <p class="muted">Pick a song, everyone sings a part whenever they can, then hear it all together.</p>
+    <p class="muted">Pick a song and a character. Everyone takes turns singing a line, then you hear it all together.</p>
 
     <div class="card">
       <h2>Start a session</h2>
       <form id="create-form">
         <select id="song" required></select>
         <input id="host-name" placeholder="Your name" maxlength="30" required>
+        <p class="pick-label muted">Your character:</p>
+        <div id="character"></div>
         <button type="submit">Create</button>
       </form>
       <p id="error" class="error"></p>
@@ -23,6 +25,7 @@
   </main>
   <script src="/config.js"></script>
   <script src="/api.js"></script>
+  <script src="/characters.js"></script>
   <script src="/home.js"></script>
 </body>
 </html>

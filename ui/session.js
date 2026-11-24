@@ -4,6 +4,9 @@
 
 const sessionId = new URLSearchParams(window.location.search).get("id");
 let refreshTimer = null; // while waiting for the host, reload every few seconds to see who joined
+const room = createRoom(document.getElementById("room")); // everyone around the table (characters.js)
+const picker = characterPicker(document.getElementById("character")); // for joining
+let pickerReady = false; // the picker starts on a character nobody has yet, once we know who joined
 
 async function load() {
   const session = await api(`/api/sessions/${encodeURIComponent(sessionId)}`);
@@ -19,8 +22,12 @@ async function load() {
     session.status === "complete" ? "Everyone has sung!" : `Hosted by ${session.host_name}`;
   const link = document.getElementById("share-link");
   link.href = link.textContent = window.location.href;
-  document.getElementById("participants").textContent =
-    session.participants.map((p) => p.display_name).join(", ");
+  room.setTitle(session.song.title);
+  room.setPeople(session.participants, me);
+  if (!pickerReady) {
+    picker.select(firstFreeCharacter(session.participants));
+    pickerReady = true;
+  }
 
   // Before the start: people join, and only the host sees the Start button.
   document.getElementById("join-card").hidden = me !== null || started;
@@ -28,6 +35,7 @@ async function load() {
   document.getElementById("lines-card").hidden = !started;
   if (!started) {
     const count = session.participants.length;
+    room.setCaption(`${count} singer${count === 1 ? "" : "s"} · waiting to start`);
     document.getElementById("lobby-text").textContent = me === hostId
       ? `${count} singer${count === 1 ? "" : "s"} so far. Press Start when everyone has joined: ` +
         "the lines are dealt one each, in the order people joined, and nobody can join after that."
@@ -38,6 +46,7 @@ async function load() {
   }
   clearInterval(refreshTimer);
   refreshTimer = null;
+  room.setCaption(session.status === "complete" ? "Everyone has sung!" : "Singing in turns");
 
   const mine = session.turns.filter((t) => t.participant_id === me && t.status === "assigned");
   const recordAll = document.getElementById("record-all");
@@ -77,7 +86,7 @@ document.getElementById("join-form").addEventListener("submit", async (event) =>
   try {
     const participant = await api(`/api/sessions/${encodeURIComponent(sessionId)}/participants`, {
       method: "POST",
-      body: JSON.stringify({ display_name: document.getElementById("display-name").value }),
+      body: JSON.stringify({ display_name: document.getElementById("display-name").value, avatar: picker.value }),
     });
     rememberParticipant(sessionId, participant.id);
     await load();

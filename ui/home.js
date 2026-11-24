@@ -1,4 +1,6 @@
-// Home page: choose a song and create a session.
+// Home page: choose a song and a character, and create a session.
+
+const picker = characterPicker(document.getElementById("character"));
 
 async function loadSongs() {
   const songs = await api("/api/sessions/songs");
@@ -18,6 +20,7 @@ document.getElementById("create-form").addEventListener("submit", async (event) 
       body: JSON.stringify({
         song_id: Number(document.getElementById("song").value),
         host_name: document.getElementById("host-name").value,
+        avatar: picker.value,
       }),
     });
     // The host is the first participant: remember it so this browser can start the session.
