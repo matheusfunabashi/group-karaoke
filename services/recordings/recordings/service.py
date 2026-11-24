@@ -6,9 +6,10 @@ from recordings import sessions_client
 from recordings.db import transaction
 from recordings.finale import build_finale
 
-# Audio only (ADR-5). What browsers' MediaRecorder produces for a microphone:
+# Audio only (ADR-5). WAV is what the karaoke page sends: it cuts each line out of the microphone
+# sound at exact times (ui/karaoke.js). The others are what browsers' MediaRecorder produces:
 # Chrome records webm, Firefox ogg, Safari mp4 (AAC, saved as .m4a).
-ALLOWED_TYPES = {"audio/webm": ".webm", "audio/ogg": ".ogg", "audio/mp4": ".m4a"}
+ALLOWED_TYPES = {"audio/wav": ".wav", "audio/webm": ".webm", "audio/ogg": ".ogg", "audio/mp4": ".m4a"}
 MAX_BYTES = 5 * 1024 * 1024  # 5 MB: a 30-second voice clip is usually well under 1 MB
 # A file this small is only a container header with no sound in it (e.g. a muted or
 # failed microphone); accepting it would mark the turn as recorded with nothing to play.
