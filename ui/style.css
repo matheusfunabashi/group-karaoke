@@ -191,3 +191,8 @@ form input, form select { flex: 1 1 180px; }
 @media (max-width: 480px) {
   .picker { grid-template-columns: repeat(3, 1fr); }
 }
+
+/* The lyrics timing nudge under the karaoke line (karaoke.js lyricsNudge) */
+.nudge { display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 8px; font-size: .9rem; }
+.nudge-button { padding: 4px 10px; font-size: .85rem; }
+.nudge-value { min-width: 4.5ch; font-variant-numeric: tabular-nums; }

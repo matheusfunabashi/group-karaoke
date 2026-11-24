@@ -196,11 +196,14 @@ The Container Apps scale to zero and the databases pause after an hour without u
    Wear headphones and press **Start singing**: the whole song plays, the current line is shown big
    and fills in word by word as the music goes through it, with a countdown and "Sing now!" on your
    lines and "Not your part" on everyone else's. Above the lyrics, whoever has the current line
-   stands up in the room with the mic. Only your lines are recorded, each one cut out at
+   stands up in the room with the mic. If the lyrics feel early or late on your headphones, the
+   **Lyrics timing** buttons move them by 0.1 s (saved in this browser; the recording itself is
+   always cut at the music's times). Only your lines are recorded, each one cut out at
    exactly its start and end. When the song is over, **Done** takes you back. Lines that failed to
    save can be sung again with the same button, which records only the lines still missing.
 5. Open **Listen to the finale** at any time; lines not sung yet stay silent. In the room, whoever
-   sang the line playing stands up.
+   sang the line playing stands up. Every voice is brought up to the same loudness, on top of a
+   slightly quieter backing track, so quiet microphones are still heard clearly.
 
 Recording uses the Web Audio API (an `AudioWorklet` captures the microphone) and saves each line as a
 WAV file (Chrome, Firefox, Safari and Edge). Browsers only allow microphone access on `localhost` or HTTPS.

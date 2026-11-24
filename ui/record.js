@@ -54,6 +54,8 @@ async function load() {
   const lines = session.turns.map((t) => ({
     ...t, singer: names[t.participant_id] ?? "someone", isMine: mine.includes(t),
   }));
+  paceLyrics(session.song, lines);
+  lyricsNudge(document.getElementById("nudge"));
 
   const ready = document.getElementById("ready-text");
   const go = document.getElementById("go-button");
@@ -97,15 +99,16 @@ async function sing(lines) {
   // Runs on every screen refresh (about 60 times a second): the song position decides which
   // line is shown and how much of it is filled in, and which of my lines are over and can be cut
   // out of the microphone capture. If the page is slow, lines are cut a little later, but always
-  // at their exact times.
+  // at their exact times. The lyrics nudge (karaoke.js) moves only what is shown, never the cuts.
   const tick = () => {
     if (stopped) return;
     const now = songMs();
-    const index = lines.findIndex((line) => now < line.end_ms);
+    const shown = now - lyricsOffset();
+    const index = lines.findIndex((line) => shown < line.end_ms);
     const line = lines[index];
-    room.setSinger(line && now >= line.start_ms ? line.participant_id : null);
+    room.setSinger(line && shown >= line.start_ms ? line.participant_id : null);
     if (line) {
-      showLine(line, lines[index + 1], now);
+      showLine(line, lines[index + 1], shown);
     } else {
       document.getElementById("cue").textContent = "End of the song";
       document.getElementById("next-line").textContent = "";
